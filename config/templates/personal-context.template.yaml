@@ -1,0 +1,48 @@
+# Personal Context for Authentic Content
+# Copy to config/personal-context.yaml and add your stories
+# Syncs with Notion "POS: Personal Context" database
+# Add stories with /add-story command or via Notion
+
+version: "1.0"
+last_updated: "YYYY-MM-DD"
+
+# Career phases (high-level timeline)
+career:
+  - period: "Start Year"
+    phase: "Early career phase"
+    note: "Brief description"
+
+  - period: "Present"
+    phase: "Current phase"
+    note: "What you're doing now"
+
+# Formative books and influences
+influences:
+  - type: "book"
+    title: "Book Title"
+    author: "Author Name"
+    discovered: "When/how you discovered it"
+    insight: "Key insight you took from it"
+    current_application: "How you apply it today"
+
+  # Add more influences: books, mentors, experiences
+  # - type: "mentor"
+  #   name: "Mentor Name"
+  #   insight: "What they taught you"
+
+# Reusable stories (grow this over time with /add-story)
+stories:
+  - id: "unique-story-id"
+    short: "One-line version for quick reference"
+    full: "Full version of the story with context and details. Include the setup, what happened, and what you learned or how it changed your perspective."
+    themes:
+      - "theme-tag-1"
+      - "theme-tag-2"
+    use_when: "Describe when this story is relevant (topics, situations, emotions)"
+
+  # Add more stories as you collect them
+  # - id: "another-story"
+  #   short: "Brief version"
+  #   full: "Complete narrative..."
+  #   themes: [...]
+  #   use_when: "..."

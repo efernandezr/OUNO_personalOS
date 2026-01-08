@@ -1,0 +1,71 @@
+# PersonalOS Sources Configuration
+# Copy to config/sources.yaml and customize with your sources
+# Use /add-source command to add new sources interactively
+
+version: "1.0"
+last_updated: "YYYY-MM-DD"  # Update when modified
+
+sources:
+  # High-priority blogs - always scan
+  blogs:
+    - name: "Example Blog"
+      url: "https://example.com/blog"
+      type: blog
+      priority: high  # high, medium, low
+      topics:
+        - "Your Topic 1"
+        - "Your Topic 2"
+
+    # Add more blogs...
+    # - name: "Another Blog"
+    #   url: "https://..."
+    #   type: blog
+    #   priority: medium
+    #   topics: [...]
+
+  # Newsletters - key thought leadership sources
+  newsletters:
+    - name: "Example Newsletter"
+      url: "https://example.substack.com"
+      type: newsletter
+      priority: high
+      topics:
+        - "Your Topic"
+
+    # Add more newsletters...
+
+  # News sites - breaking developments
+  news:
+    - name: "Example News Site"
+      url: "https://news.example.com/category/"
+      type: news
+      priority: medium
+      topics:
+        - "General Topic"
+
+    # Add more news sources...
+
+  # Industry publications
+  industry:
+    - name: "Industry Publication"
+      url: "https://industry.example.com"
+      type: industry
+      priority: medium
+      topics:
+        - "Industry Topic"
+
+  # Research and documentation
+  research:
+    - name: "Research Source"
+      url: "https://research.example.com"
+      type: research
+      priority: low
+      topics:
+        - "Research Topic"
+
+# Source scanning settings
+settings:
+  default_timeframe: "24h"     # How far back to scan
+  max_sources_per_run: 20      # Limit for performance
+  retry_on_failure: true
+  fallback_to_web_search: true

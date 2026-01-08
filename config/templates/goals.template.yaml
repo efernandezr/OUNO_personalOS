@@ -1,0 +1,98 @@
+# PersonalOS Goals Configuration
+# Copy to config/goals.yaml and customize
+# Track progress against your defined goals
+
+version: "1.0"
+last_updated: "YYYY-MM-DD"
+
+# Audience growth goals
+audience:
+  linkedin:
+    current: 0           # Update with actual count
+    target_30_day: 0     # Your 30-day target
+    target_90_day: 0     # Your 90-day target
+    target_yearly: 0     # Your annual target
+    notes: "Fill in with your current LinkedIn follower count"
+
+  newsletter:
+    current: 0
+    target_30_day: 0
+    target_90_day: 0
+    target_yearly: 0
+    notes: "Fill in with your current newsletter subscriber count"
+
+  # Add other platforms as needed:
+  # twitter:
+  #   current: 0
+  #   ...
+
+# Content output goals
+content:
+  linkedin_posts:
+    weekly_target: 3       # Posts per week
+    monthly_target: 12     # Posts per month
+    current_week: 0
+    current_month: 0
+
+  newsletter_issues:
+    monthly_target: 2      # Issues per month
+    current_month: 0
+
+  long_form:
+    monthly_target: 1      # Blog posts, guides, etc.
+    current_month: 0
+    notes: "Blog posts, guides, or in-depth articles"
+
+# Engagement goals
+engagement:
+  linkedin:
+    target_avg_engagement: 0     # Average likes + comments per post
+    target_engagement_rate: 0    # Percentage
+
+  newsletter:
+    target_open_rate: 0          # Percentage
+    target_click_rate: 0         # Percentage
+
+# Time efficiency goals
+efficiency:
+  daily_research_time:
+    baseline_minutes: 60         # Time before PersonalOS
+    target_minutes: 15           # Goal with PersonalOS
+    current_minutes: 0           # Track improvement
+
+  content_creation_time:
+    baseline_minutes: 90
+    target_minutes: 30
+    current_minutes: 0
+
+# Thought leadership goals
+thought_leadership:
+  speaking:
+    yearly_target: 0             # Podcasts, webinars, conferences
+    current_year: 0
+    notes: "Speaking engagements"
+
+  collaborations:
+    yearly_target: 0             # Guest posts, partnerships
+    current_year: 0
+    notes: "Guest posts, joint content, partnerships"
+
+# Tracking periods (update these as you go)
+periods:
+  current_week:
+    start: "YYYY-MM-DD"
+    end: "YYYY-MM-DD"
+
+  current_month:
+    start: "YYYY-MM-01"
+    end: "YYYY-MM-DD"
+
+  current_quarter:
+    start: "YYYY-MM-01"
+    end: "YYYY-MM-DD"
+
+# Goal review settings
+settings:
+  review_frequency: "weekly"
+  dashboard_command: "/weekly-dashboard"
+  auto_track_from_notion: true

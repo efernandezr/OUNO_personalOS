@@ -1,0 +1,68 @@
+# PersonalOS Competitors Configuration
+# Copy to config/competitors.yaml and customize
+# Track thought leaders and competitors in your space
+
+version: "1.0"
+last_updated: "YYYY-MM-DD"
+
+competitors:
+  # Tier 1: Direct competitors - monitor closely
+  tier_1:
+    - name: "Competitor Name"
+      description: "Brief description of who they are"
+      platforms:
+        linkedin:
+          url: "https://linkedin.com/in/username"
+          handle: "username"
+        twitter:
+          url: "https://twitter.com/handle"
+          handle: "@handle"
+        blog:
+          url: "https://their-blog.com"
+        newsletter:
+          url: "https://their-newsletter.com"
+      focus_areas:
+        - "Topic 1"
+        - "Topic 2"
+      positioning: "How they position themselves"
+      content_style: "Description of their content style"
+      unique_angles:
+        - "What makes them unique 1"
+        - "What makes them unique 2"
+      notes: "Additional notes and observations"
+
+    # Add more tier 1 competitors...
+
+  # Tier 2: Adjacent thought leaders - watch for trends
+  tier_2:
+    - name: "Adjacent Leader"
+      description: "Why they're relevant"
+      platforms:
+        linkedin:
+          url: "https://linkedin.com/in/username"
+          handle: "username"
+      focus_areas:
+        - "Adjacent Topic"
+      positioning: "Their positioning"
+      content_style: "Their style"
+      notes: "Why you're tracking them"
+
+    # Add more tier 2 competitors...
+
+  # Tier 3: Emerging voices - occasional monitoring
+  tier_3:
+    - name: "Emerging Voice"
+      description: "New voice in the space"
+      platforms: {}
+      focus_areas: []
+      notes: "Why they're on your radar"
+
+# Tracking settings
+settings:
+  scan_frequency: "weekly"     # weekly, daily, monthly
+  platforms_priority:
+    - linkedin
+    - newsletter
+    - twitter
+    - blog
+  engagement_threshold: 100    # Minimum engagement to track

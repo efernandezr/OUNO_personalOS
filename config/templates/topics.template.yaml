@@ -1,0 +1,56 @@
+# PersonalOS Topic Configuration
+# Copy to config/topics.yaml and customize
+# Define what topics to monitor for market intelligence
+
+version: "1.0"
+last_updated: "YYYY-MM-DD"
+
+topics:
+  # Primary focus areas - always monitor (high priority)
+  primary:
+    - name: "Your Main Topic"
+      keywords:
+        - "keyword 1"
+        - "keyword 2"
+        - "keyword phrase"
+      priority: high
+
+    - name: "Second Main Topic"
+      keywords:
+        - "keyword 1"
+        - "keyword 2"
+      priority: high
+
+    # Add more primary topics...
+    # These should be your core content pillars
+
+  # Secondary focus - monitor when relevant (medium priority)
+  secondary:
+    - name: "Supporting Topic"
+      keywords:
+        - "keyword 1"
+        - "keyword 2"
+      priority: medium
+
+    - name: "Adjacent Topic"
+      keywords:
+        - "keyword"
+      priority: medium
+
+    # Add more secondary topics...
+
+  # Emerging - occasional deep dives (low priority, trend watching)
+  emerging:
+    - name: "Trend to Watch"
+      keywords:
+        - "emerging keyword"
+        - "new term"
+      priority: low
+
+    - name: "Future Topic"
+      keywords:
+        - "future trend"
+      priority: low
+
+    # Add more emerging topics...
+    # These are topics you're exploring but not committed to yet

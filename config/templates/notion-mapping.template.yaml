@@ -1,0 +1,150 @@
+# PersonalOS Notion Database Mapping
+# Copy to config/notion-mapping.yaml after creating Notion databases
+# Database IDs will be populated after creation via Notion MCP
+
+version: "1.0"
+last_updated: "YYYY-MM-DD"
+
+# Notion workspace info
+workspace:
+  name: "PersonalOS"
+  parent_page_id: "your-notion-page-id-here"  # Create a parent page in Notion first
+
+# Database mappings
+# Format: internal_name: notion_database_id
+# Create these databases in Notion with the schemas below, then copy their IDs here
+databases:
+  market_intelligence: ""  # POS: Market Intelligence
+  competitive_analysis: ""  # POS: Competitive Analysis
+  content_calendar: ""  # POS: Content Calendar
+  brain_dumps: ""  # POS: Brain Dumps
+  weekly_reviews: ""  # POS: Weekly Reviews
+  daily_briefs: ""  # POS: Daily Briefs
+  personal_context: ""  # POS: Personal Context
+
+# Database schemas (for reference when creating databases in Notion)
+schemas:
+  market_intelligence:
+    title_property: "Title"
+    properties:
+      - name: "Date"
+        type: "date"
+      - name: "Priority"
+        type: "select"
+        options: ["High", "Medium", "Low"]
+      - name: "Topics"
+        type: "multi_select"
+      - name: "Source"
+        type: "url"
+      - name: "Summary"
+        type: "rich_text"
+      - name: "Content Potential"
+        type: "select"
+        options: ["High", "Medium", "Low"]
+      - name: "Status"
+        type: "select"
+        options: ["New", "Reviewed", "Used", "Archived"]
+
+  content_calendar:
+    title_property: "Title"
+    properties:
+      - name: "Platform"
+        type: "select"
+        options: ["LinkedIn", "Newsletter", "Twitter", "Blog"]
+      - name: "Status"
+        type: "select"
+        options: ["Idea", "Draft", "Review", "Scheduled", "Published"]
+      - name: "Publish Date"
+        type: "date"
+      - name: "Content"
+        type: "rich_text"
+      - name: "Hook"
+        type: "rich_text"
+      - name: "Engagement"
+        type: "number"
+
+  brain_dumps:
+    title_property: "Title"
+    properties:
+      - name: "Date"
+        type: "date"
+      - name: "Tags"
+        type: "multi_select"
+      - name: "Content"
+        type: "rich_text"
+      - name: "Processed"
+        type: "checkbox"
+
+  competitive_analysis:
+    title_property: "Title"
+    properties:
+      - name: "Competitor"
+        type: "select"
+      - name: "Date"
+        type: "date"
+      - name: "Platform"
+        type: "select"
+        options: ["LinkedIn", "Twitter", "Newsletter", "Blog"]
+      - name: "Content Type"
+        type: "select"
+      - name: "Engagement"
+        type: "number"
+      - name: "Key Insights"
+        type: "rich_text"
+      - name: "Opportunity"
+        type: "rich_text"
+
+  weekly_reviews:
+    title_property: "Week"
+    properties:
+      - name: "Date Range"
+        type: "date"
+      - name: "LinkedIn Followers"
+        type: "number"
+      - name: "Newsletter Subscribers"
+        type: "number"
+      - name: "Content Published"
+        type: "number"
+      - name: "Key Wins"
+        type: "rich_text"
+      - name: "Challenges"
+        type: "rich_text"
+      - name: "Next Week Focus"
+        type: "rich_text"
+
+  daily_briefs:
+    title_property: "Date"
+    properties:
+      - name: "Generated"
+        type: "date"
+      - name: "Priority Updates"
+        type: "rich_text"
+      - name: "Content Opportunity"
+        type: "rich_text"
+      - name: "Full Brief"
+        type: "rich_text"
+      - name: "Status"
+        type: "select"
+        options: ["Generated", "Reviewed"]
+
+  personal_context:
+    title_property: "Title"
+    properties:
+      - name: "Type"
+        type: "select"
+        options: ["story", "book", "experience", "career"]
+      - name: "Short Version"
+        type: "rich_text"
+      - name: "Themes"
+        type: "multi_select"
+      - name: "Use When"
+        type: "rich_text"
+      - name: "Synced"
+        type: "checkbox"
+
+# Sync settings
+sync:
+  enabled: true
+  on_output_creation: true
+  retry_attempts: 3
+  log_failures: true

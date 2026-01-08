@@ -1,0 +1,70 @@
+# PersonalOS .gitignore
+# Framework is tracked; personal data stays local
+
+# ===========================================
+# Personal Configurations
+# ===========================================
+# Your actual config files (use templates/ versions as starting point)
+config/*.yaml
+!config/templates/
+
+# ===========================================
+# Generated Content & Outputs
+# ===========================================
+# All generated outputs stay local
+outputs/
+brain-dumps/
+logs/
+
+# ===========================================
+# Claude Code Local Settings
+# ===========================================
+.claude/settings.local.json
+.claude/plans/
+
+# ===========================================
+# Environment & Secrets
+# ===========================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+
+# ===========================================
+# OS Generated Files
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===========================================
+# Editor & IDE
+# ===========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ===========================================
+# Archive (if sensitive)
+# ===========================================
+# Uncomment if your archive contains personal content
+# archive/
+
+# ===========================================
+# Temporary Files
+# ===========================================
+*.tmp
+*.temp
+*.bak
+*.backup

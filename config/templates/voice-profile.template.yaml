@@ -1,0 +1,108 @@
+# PersonalOS Voice Profile
+# Copy to config/voice-profile.yaml and customize with your voice
+# Refine with /voice-calibrate command using actual content samples
+
+version: "1.0"
+last_calibrated: "YYYY-MM-DD"
+status: "placeholder"  # Change to "calibrated" after running /voice-calibrate
+
+# Identity
+identity:
+  name: "Your Name"
+  role: "Your Professional Title"
+  context: "Brief description of your current role/focus"
+  expertise:
+    - "Expertise Area 1"
+    - "Expertise Area 2"
+    - "Expertise Area 3"
+
+# Tone characteristics
+tone:
+  primary: "Professional yet approachable"  # Your main tone
+  attributes:
+    - "Characteristic 1"
+    - "Characteristic 2"
+    - "Characteristic 3"
+
+  avoid:
+    - "Things to avoid 1"
+    - "Things to avoid 2"
+
+# Platform-specific structure
+structure:
+  linkedin:
+    opening: "How you typically open LinkedIn posts"
+    body: "Your typical body structure"
+    closing: "How you typically close posts"
+    length: "1200-1500 characters"
+    format_preferences:
+      - "Line breaks between paragraphs"
+      - "Your formatting preferences"
+    hashtag_strategy: "3-5 relevant hashtags at end"
+
+  newsletter:
+    opening: "How you open newsletters"
+    body: "Newsletter body structure"
+    closing: "Newsletter closing style"
+    length: "800-1200 words"
+    format_preferences:
+      - "Clear section headers"
+      - "Your preferences"
+
+  twitter:
+    style: "Your Twitter/X thread style"
+    length: "6-10 tweets per thread"
+    format_preferences:
+      - "Hook in first tweet"
+      - "Your preferences"
+
+# Vocabulary preferences
+vocabulary:
+  preferred:
+    - use: "preferred term"
+      instead_of: "term to avoid"
+    # Add more...
+
+  include_often:
+    - "terms you use frequently"
+
+  avoid:
+    - "buzzwords to avoid"
+    - "jargon to skip"
+
+# Writing patterns
+patterns:
+  openers:
+    - "How you start content"
+    - "Alternative opening styles"
+
+  body:
+    - "Body writing patterns"
+    - "Structure preferences"
+
+  closers:
+    - "How you end content"
+    - "CTA styles"
+
+# Content pillars influence (customize to your pillars)
+content_pillars:
+  pillar_1:
+    tone_adjustment: "How tone shifts for this topic"
+    key_themes:
+      - "Theme 1"
+      - "Theme 2"
+
+  pillar_2:
+    tone_adjustment: "Tone for this pillar"
+    key_themes:
+      - "Theme 1"
+      - "Theme 2"
+
+# Calibration notes
+calibration:
+  samples_required: 10
+  sample_types:
+    - "linkedin-posts"
+    - "newsletter-samples"
+  last_samples: []
+  improvement_notes: "Add actual content samples to inputs/samples/ and run /voice-calibrate"
