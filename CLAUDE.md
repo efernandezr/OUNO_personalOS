@@ -244,12 +244,32 @@ Always load configuration at the start of command execution:
 
 ## Web Scraping Tools
 
-### Firecrawl MCP (Primary)
-Use Firecrawl for structured web scraping when available.
+### MANDATORY: Firecrawl MCP (Primary)
+PersonalOS uses Firecrawl as the **REQUIRED** web scraping tool.
 
-### Built-in Tools (Fallback)
-- `WebFetch` - Fetch and process single URLs
-- `WebSearch` - Search the web for information
+**For content scraping**: `mcp__firecrawl__firecrawl_scrape`
+**For content discovery**: `mcp__firecrawl__firecrawl_search`
+
+### Built-in Tools (Fallback ONLY)
+These tools should ONLY be used when Firecrawl returns an error:
+- `WebFetch` - Fallback for single URL fetch failures
+- `WebSearch` - Last resort for discovery if Firecrawl search fails
+
+**Do NOT use WebSearch as a primary tool** - it should only be used when Firecrawl is unavailable.
+
+### Why Firecrawl First?
+1. Better structured content extraction
+2. Respects robots.txt and rate limits automatically
+3. Handles JavaScript-rendered pages
+4. Consistent output format for processing
+5. Configurable with API key for reliable access
+
+### Tool Enforcement
+When executing commands that require web scraping:
+1. **ALWAYS** attempt Firecrawl first
+2. Only fall back to WebFetch/WebSearch if Firecrawl returns an error
+3. Log fallback usage in output (`scan_metadata.fallback_count`)
+4. Set `degraded_mode: true` if using WebSearch as primary
 
 When scraping sources:
 1. Respect rate limits

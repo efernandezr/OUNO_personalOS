@@ -1,6 +1,6 @@
 # PersonalOS Status
 
-> Last updated: 2026-01-08 (after /content-repurpose with operative agents)
+> Last updated: 2026-01-08 (after /market-intelligence with Firecrawl enforcement)
 > Run `/sync-status` to rebuild this file from project state
 
 ## Quick State
@@ -8,8 +8,8 @@
 | Field | Value |
 |-------|-------|
 | **Phase** | Active (setup complete, commands operational) |
-| **Last Command** | /content-repurpose |
-| **Last Output** | outputs/content/2026-01-08-ai-transformation-leadership/ |
+| **Last Command** | /market-intelligence |
+| **Last Output** | outputs/intelligence/2026-01-08-market-brief.md |
 | **Blockers** | None |
 
 ## What's Working
@@ -38,6 +38,7 @@
 
 | Date | Command | Output | Notes |
 |------|---------|--------|-------|
+| 2026-01-08 | /market-intelligence | outputs/intelligence/2026-01-08-market-brief.md | 8 sources, 13 insights, 6 trends (Firecrawl enforcement test: 7/7 success, 0 fallbacks) |
 | 2026-01-08 | /content-repurpose | outputs/content/2026-01-08-ai-transformation-leadership/ | 2 LinkedIn, 1 Twitter thread, 1 newsletter (AI job cuts leadership) |
 | 2026-01-08 | /market-intelligence | outputs/intelligence/2026-01-08-market-brief.md | 8 sources, 10 insights, 5 trends (operative agents test) |
 | 2026-01-07 | System setup | config/personal-context.yaml | Personal context system, /add-story command |

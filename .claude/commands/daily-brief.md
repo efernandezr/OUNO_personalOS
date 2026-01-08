@@ -42,6 +42,17 @@ Orchestrator (this command)     →     intelligence-agent
 12. Update STATUS.md
 ```
 
+## Tool Enforcement
+
+When invoking the intelligence-agent via Task tool:
+- **Firecrawl MCP is REQUIRED** for web scraping (`mcp__firecrawl__firecrawl_scrape`)
+- **WebSearch is NOT acceptable** as the primary scanning tool
+- The agent MUST track tool usage in `scan_metadata` output field
+- If `degraded_mode: true` in output, surface this warning to user
+
+Include this reminder in the agent prompt:
+> "CRITICAL: Use Firecrawl MCP for all web scraping. See Tool Selection Rules in agent definition."
+
 ## Execution Steps
 
 ### Step 1: Load Configuration (Orchestrator)
