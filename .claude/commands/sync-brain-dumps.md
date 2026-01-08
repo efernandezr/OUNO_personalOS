@@ -1,5 +1,5 @@
 ---
-description: Backup your Notion brain dumps to local storage (project)
+description: Backup your Notion brain dumps to local storage
 ---
 
 # /sync-brain-dumps
@@ -18,116 +18,191 @@ Pull brain dumps and personal context from Notion and save them locally for anal
 - `--since`: Only sync entries from a specific date (format: YYYY-MM-DD)
 - `--dry-run`: Show what would be synced without actually saving files
 
+## Orchestration Pattern
+
+This command uses **Task tool delegation** to `sync-brain-dumps-agent`.
+
+```
+Orchestrator (this command)     →     Agent
+─────────────────────────────────────────────────────────
+1. Parse parameters
+2. Load notion-mapping.yaml
+3. Construct agent input
+                                 →    4. sync-brain-dumps-agent (fetch & save)
+                                 →    5. Return sync report
+6. Receive JSON output           ←
+7. Display summary
+8. Sync personal context (if available)
+9. Update STATUS.md
+```
+
 ## Execution Steps
 
-### 1. Load Configuration
+### Step 1: Load Configuration (Orchestrator)
+
+Read config file:
+- `config/notion-mapping.yaml` - Get brain_dumps and personal_context database IDs
+
+### Step 2: Prepare Local Path (Orchestrator)
+
+1. Get current year-month: `YYYY-MM`
+2. Construct path: `brain-dumps/YYYY-MM/`
+3. Create directory if it doesn't exist
+
+### Step 3: Invoke Sync Brain Dumps Agent (Task Tool)
 
 ```
-1. Read `config/notion-mapping.yaml`
-2. Get brain_dumps database ID: d2a0f13e42b54efdab188fb51fcf181d
+Task tool call:
+  - description: "Sync brain dumps from Notion to local"
+  - subagent_type: "general-purpose"
+  - model: "haiku"
+  - prompt: |
+      You are the sync-brain-dumps-agent for PersonalOS.
+
+      [Read and include content of .claude/agents/sync-brain-dumps-agent.md]
+
+      ## Your Task
+
+      Sync brain dumps from Notion to local storage:
+
+      ```json
+      {
+        "database_id": "{from notion-mapping.yaml - brain_dumps}",
+        "local_path": "brain-dumps/{YYYY-MM}/",
+        "since_date": {from --since parameter or null}
+      }
+      ```
+
+      {If --all flag: "Sync ALL entries, not just unprocessed"}
+      {If --dry-run flag: "DRY RUN - report what would be synced without creating files"}
+
+      Return valid JSON matching the output schema.
 ```
 
-### 2. Query Notion Database
+### Step 4: Process Agent Output (Orchestrator)
 
-Use Notion MCP to fetch brain dumps:
+The agent returns:
+- `synced[]` - List of synced files with paths
+- `skipped[]` - List of skipped entries with reasons
+- `errors[]` - Any errors encountered
+- `total_synced` - Count
+- `total_skipped` - Count
 
-```
-mcp__notion__notion-fetch with database ID
-```
-
-Filter options:
-- Default: `Processed` = false (unsynced entries only)
-- With `--all`: No filter, get everything
-- With `--since`: Filter by Date >= value
-
-### 3. Process Each Entry
-
-For each brain dump from Notion:
-
-1. **Extract metadata**:
-   - Title
-   - Date (from Date property or created_time)
-   - Tags (from Tags multi-select)
-   - Content (from Content rich_text or page body)
-
-2. **Generate filename**:
-   ```
-   brain-dumps/YYYY-MM/YYYY-MM-DD-{slug}.md
-   ```
-   Where `{slug}` is the title converted to kebab-case
-
-3. **Check for duplicates**:
-   - Compare filename to existing files
-   - If exists, compare content hash
-   - Skip if identical, warn if different
-
-### 4. Save Local Files
-
-Create markdown file with format:
-
-```markdown
-# {Title}
-
-**Date**: {YYYY-MM-DD}
-**Tags**: {comma-separated tags}
-**Source**: Notion (synced {current-date})
-
----
-
-{Content body}
-```
-
-### 5. Update Notion Status
-
-After successful local save:
-- Mark the Notion entry's `Processed` field as checked
-- This prevents re-syncing the same entry
-
-### 6. Generate Sync Report
-
-Output summary:
+### Step 5: Display Summary (Orchestrator)
 
 ```markdown
 ## Sync Complete
 
-**Synced**: {count} brain dumps
-**Skipped**: {count} (already exist)
-**Errors**: {count}
+**Brain Dumps**
+- Synced: {total_synced} new entries
+- Skipped: {total_skipped} (already exist or empty)
 
 ### New Files Created
-- brain-dumps/2026-01/2026-01-06-ai-agent-ideas.md
-- brain-dumps/2026-01/2026-01-05-content-strategy.md
+{For each synced:}
+- {local_path} ({title})
 
-### Skipped (Already Exist)
-- brain-dumps/2026-01/2026-01-04-dmax-thoughts.md
+{If skipped not empty:}
+### Skipped
+{For each skipped:}
+- {title}: {reason}
+
+{If errors not empty:}
+### Errors
+{For each error:}
+- {error}
 ```
 
-## Output Location
+### Step 6: Sync Personal Context (Optional - Orchestrator)
 
+If personal_context database ID is configured (not "pending"):
+
+```
+Task tool call:
+  - description: "Sync personal context from Notion"
+  - subagent_type: "general-purpose"
+  - model: "haiku"
+  - prompt: |
+      You are the sync-agent for PersonalOS.
+
+      [Include sync-agent.md content]
+
+      ## Your Task
+
+      Query personal context entries where Synced = false:
+
+      ```json
+      {
+        "operation": "query",
+        "database": "personal_context",
+        "database_id": "{from notion-mapping}",
+        "data": {
+          "filters": { "Synced": false }
+        }
+      }
+      ```
+```
+
+Then for each entry, append to `config/personal-context.yaml`:
+- Stories → `stories` array
+- Influences → `influences` array
+- Career → `career` array
+
+Finally, mark entries as synced in Notion.
+
+### Step 7: Extended Summary (If Personal Context Synced)
+
+```markdown
+### Personal Context
+- Stories synced: {count}
+- Influences synced: {count}
+- Career phases synced: {count}
+```
+
+### Step 8: Update STATUS.md (Orchestrator)
+
+1. Set **Last Command** to `/sync-brain-dumps`
+2. Add entry to **Activity Log** with counts
+3. Suggest running `/brain-dump-analysis` if new content synced
+
+## Agent Reference
+
+- **Sync Brain Dumps Agent**: `.claude/agents/sync-brain-dumps-agent.md`
+- **Sync Agent**: `.claude/agents/sync-agent.md` (for personal context)
+
+## Output Locations
+
+### Brain Dumps
 Files saved to: `brain-dumps/YYYY-MM/`
+
+Format: `YYYY-MM-DD-{slug}.md`
+
+### Personal Context
+Appended to: `config/personal-context.yaml`
 
 ## Duplicate Handling
 
 | Scenario | Action |
 |----------|--------|
 | Filename exists, content identical | Skip (no action) |
-| Filename exists, content different | Create with `-v2` suffix, warn user |
+| Filename exists, content different | Create with `-v2` suffix, warn |
 | New entry | Create file |
 
 ## Error Handling
 
 | Error | Action |
 |-------|--------|
-| Notion API failure | Retry 3 times, then abort with message |
-| Permission error | Log error, continue with other entries |
-| Invalid date format | Use created_time as fallback |
-| Empty content | Create file with note, warn user |
+| Notion API failure | Retry 3 times, abort with message |
+| Permission error | Log, continue with other entries |
+| Invalid date | Use created_time as fallback |
+| Empty content | Create file with note, warn |
 
-## Post-Execution
+## Dry Run Mode
 
-1. Display sync summary
-2. Update STATUS.md activity log
-3. Suggest running `/brain-dump-analysis` if new content was synced
+With `--dry-run`:
+- Queries Notion normally
+- Reports what WOULD be synced
+- Does NOT create files
+- Does NOT update Notion status
 
 ## Example
 
@@ -138,76 +213,21 @@ Querying Notion "POS: Brain Dumps" database...
 Found 3 unprocessed brain dumps.
 
 Syncing:
-  [1/3] "AI Agent Architecture Ideas" → brain-dumps/2026-01/2026-01-06-ai-agent-architecture-ideas.md ✓
-  [2/3] "Content Pillar Thoughts" → brain-dumps/2026-01/2026-01-05-content-pillar-thoughts.md ✓
-  [3/3] "dMAX Platform Notes" → Skipped (already exists)
+  [1/3] "AI Agent Ideas" → brain-dumps/2026-01/2026-01-08-ai-agent-ideas.md ✓
+  [2/3] "Content Strategy" → brain-dumps/2026-01/2026-01-07-content-strategy.md ✓
+  [3/3] "dMAX Notes" → Skipped (already exists)
 
 ## Summary
 - Synced: 2 new brain dumps
 - Skipped: 1 duplicate
-- Run /brain-dump-analysis to process new content
+
+Tip: Run /brain-dump-analysis to process new content
 ```
-
----
-
-## Part 2: Sync Personal Context
-
-After syncing brain dumps, also sync personal stories and experiences from Notion.
-
-### 1. Load Personal Context Database
-
-```
-1. Read `config/notion-mapping.yaml`
-2. Get personal_context database ID
-3. Skip if database ID is "pending" (not yet created)
-```
-
-### 2. Query Personal Context
-
-Use Notion MCP to fetch entries where `Synced` = false
-
-### 3. Process Each Entry
-
-For each personal context entry from Notion:
-
-1. **Extract data**:
-   - Title (story identifier)
-   - Type (story, book, experience, career)
-   - Short Version
-   - Themes (multi-select)
-   - Use When
-
-2. **Append to config/personal-context.yaml**:
-   - Add to appropriate section based on Type
-   - Stories → `stories` array
-   - Books → `influences` array
-   - Career → `career` array
-
-### 4. Update Notion Status
-
-After successful local save:
-- Mark the Notion entry's `Synced` field as checked
-
-### 5. Extended Sync Report
-
-```markdown
-## Sync Complete
-
-### Brain Dumps
-- Synced: {count}
-- Skipped: {count}
-
-### Personal Context
-- Stories synced: {count}
-- Influences synced: {count}
-```
-
----
 
 ## Notes
 
-- This is a one-way sync: Notion → Local
-- Local files are considered source of truth for content
-- Notion is the source of truth for "new" entries
+- One-way sync: Notion → Local
+- Local files are source of truth for content
+- Notion is source of truth for "new" entries
 - Safe to run multiple times (idempotent)
 - Personal context syncs to `config/personal-context.yaml`

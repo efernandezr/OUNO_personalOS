@@ -80,17 +80,54 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 
 ---
 
-## Sub-Agents
+## Operative Agents
 
-You have access to these specialized sub-agents in `sub-agents/`:
+PersonalOS uses **Task tool delegation** to specialized agents defined in `.claude/agents/`.
 
-1. **intelligence-researcher** - Web scraping and trend analysis
-2. **competitive-analyst** - Competitor monitoring and analysis
-3. **content-creator** - Voice-matched content generation
-4. **pattern-analyst** - Theme extraction and connection mapping
-5. **metrics-analyst** - Data tracking and visualization
+### Available Agents
 
-When executing commands, spawn appropriate sub-agents using the Task tool.
+| Agent | Purpose | Model | Used By |
+|-------|---------|-------|---------|
+| `intelligence-agent` | Web scraping + trend synthesis | sonnet | `/market-intelligence`, `/daily-brief` |
+| `pattern-agent` | Note analysis + theme extraction | sonnet | `/brain-dump-analysis` |
+| `content-agent` | Voice-matched content generation | sonnet | `/content-repurpose` |
+| `sync-agent` | Notion read/write operations | haiku | All commands (Notion sync) |
+| `sync-brain-dumps-agent` | Pull brain dumps from Notion | haiku | `/sync-brain-dumps` |
+
+### Agent Invocation Pattern
+
+Commands invoke agents via the Task tool:
+
+```
+Task tool call:
+  - description: "{short description}"
+  - subagent_type: "general-purpose"
+  - model: "sonnet" | "haiku"
+  - prompt: |
+      You are the {agent-name} for PersonalOS.
+
+      [Include content of .claude/agents/{agent-name}.md]
+
+      ## Your Task
+      {specific task with input JSON}
+
+      Return valid JSON matching the output schema.
+```
+
+### Agent Benefits
+
+- **Context isolation**: Each agent loads only needed configs
+- **Improvable**: Edit markdown files to refine agent behavior
+- **Parallel execution**: Use `run_in_background` for concurrent agents
+- **Model selection**: Haiku for simple tasks, Sonnet for complex
+
+### Agent Logs
+
+All agent invocations are logged to `outputs/logs/{date}-{agent}.json` for debugging and improvement.
+
+### Legacy Sub-Agents
+
+The `sub-agents/` folder contains deprecated documentation. See `.claude/agents/` for operative agents.
 
 ---
 
@@ -243,7 +280,7 @@ Tracked (Framework)          Gitignored (Personal)
 config/templates/*.yaml  →   config/*.yaml
 CLAUDE.md, README.md         outputs/
 .claude/commands/            brain-dumps/
-sub-agents/                  logs/
+.claude/agents/              logs/
 scripts/                     .claude/settings.local.json
 ```
 
@@ -260,7 +297,7 @@ When contributing to the framework:
 
 **What to commit:**
 - Command definitions (`.claude/commands/`)
-- Sub-agent definitions (`sub-agents/`)
+- Agent definitions (`.claude/agents/`)
 - Template configs (`config/templates/`)
 - Scripts (`scripts/`)
 - Documentation (README.md, CLAUDE.md)
@@ -317,3 +354,4 @@ When adding new config files:
 | 1.2 | 2026-01-06 | Added /sync-brain-dumps; brain-dump-analysis now reads from Notion |
 | 1.3 | 2026-01-07 | Added personal-context.yaml, /add-story, Notion sync for personal context |
 | 1.4 | 2026-01-08 | Git setup: templates, .gitignore, setup.sh, MIT license, collaboration docs |
+| 2.0 | 2026-01-08 | Operative agents: Task tool delegation, .claude/agents/, JSON output schemas |

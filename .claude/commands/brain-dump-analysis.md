@@ -28,171 +28,262 @@ Analyze accumulated notes, ideas, and brain dumps to identify patterns and conte
 
 - `--min-mentions`: Minimum times a theme must appear (default: 2)
 
+## Orchestration Pattern
+
+This command uses **Task tool delegation** to `pattern-agent` and `sync-agent`.
+
+```
+Orchestrator (this command)     →     Agents
+─────────────────────────────────────────────────────────
+1. Parse parameters
+2. Load configs
+3. Query Notion brain dumps      →    sync-agent (query)
+4. Read local brain-dumps/
+5. Deduplicate & combine
+6. Construct pattern input
+                                 →    7. pattern-agent (analysis)
+                                 →    8. Return themes, queue
+9. Receive JSON output           ←
+10. Format markdown
+11. Write files
+12. Mark Notion processed        →    sync-agent (update)
+13. Update STATUS.md
+```
+
 ## Execution Steps
 
-1. **Load Configuration**
-   - Read `config/topics.yaml` for content pillars
-   - Read `config/notion-mapping.yaml` for database IDs
+### Step 1: Load Configuration (Orchestrator)
 
-2. **Gather Brain Dumps**
-   - Scan `brain-dumps/` folder for markdown files
-   - Query Notion "POS: Brain Dumps" database (primary mobile capture)
-   - Deduplicate entries that exist in both sources
-   - Filter combined results by timeframe parameter
+Read these config files:
+- `config/topics.yaml` - Get content pillars array
+- `config/notion-mapping.yaml` - Get brain_dumps database ID
 
-3. **Extract Themes**
-   For each note:
-   - Identify explicit topic mentions
-   - Detect implicit themes
-   - Note emotional emphasis (questions, exclamations)
-   - Track keyword frequency
+### Step 2: Query Notion Brain Dumps (sync-agent)
 
-4. **Analyze Patterns**
-   - Count theme frequency
-   - Map connections between ideas
-   - Track theme evolution over time
-   - Score content potential
+```
+Task tool call:
+  - description: "Query unprocessed brain dumps from Notion"
+  - subagent_type: "general-purpose"
+  - model: "haiku"
+  - prompt: |
+      You are the sync-agent for PersonalOS.
 
-5. **Align with Pillars**
-   Check each theme against content pillars:
-   1. AI for Marketing
-   2. Claude Code for Marketing
-   3. AI Agents for Marketing
-   4. Building Agents
-   5. Digital Marketing Maturity
+      [Include sync-agent.md content]
 
-6. **Generate Analysis**
-   Create structured output with:
-   - Content Pillars Identified
-   - Theme Evolution
-   - Underexplored Ideas
-   - Connection Map
-   - Content Queue Recommendations
+      ## Your Task
 
-7. **Save Output**
-   - Write to `outputs/analysis/{date}-brain-analysis.md`
+      ```json
+      {
+        "operation": "query",
+        "database": "brain_dumps",
+        "database_id": "{from notion-mapping}",
+        "data": {
+          "filters": { "Processed": false }
+        }
+      }
+      ```
+```
 
-8. **Sync to Notion**
-   - Mark processed brain dumps as "Processed"
-   - Create content ideas in "POS: Content Calendar" (optional)
+### Step 3: Read Local Brain Dumps (Orchestrator)
 
-## Output Format
+1. List files in `brain-dumps/` matching timeframe
+2. Parse each markdown file for title, date, content, tags
+3. Build local notes array
+
+### Step 4: Combine & Deduplicate (Orchestrator)
+
+1. Merge Notion entries + local files
+2. Match by title + date
+3. If duplicate, prefer local version (may have edits)
+4. Build combined notes array:
+
+```json
+[
+  {
+    "title": "string",
+    "content": "string",
+    "date": "YYYY-MM-DD",
+    "source": "local" | "notion",
+    "tags": ["string"]
+  }
+]
+```
+
+### Step 5: Invoke Pattern Agent (Task Tool)
+
+```
+Task tool call:
+  - description: "Analyze brain dumps for patterns"
+  - subagent_type: "general-purpose"
+  - model: "sonnet"
+  - prompt: |
+      You are the pattern-agent for PersonalOS.
+
+      [Read and include content of .claude/agents/pattern-agent.md]
+
+      ## Your Task
+
+      Analyze these brain dumps for patterns:
+
+      ```json
+      {
+        "notes": [/* combined notes array */],
+        "focus": "{from parameter or 'all'}",
+        "pillars": [
+          "AI for Marketing",
+          "Claude Code for Marketing",
+          "AI Agents for Marketing",
+          "Building Agents",
+          "Digital Marketing Maturity"
+        ],
+        "min_mentions": {from parameter or 2}
+      }
+      ```
+
+      Return valid JSON matching the output schema.
+```
+
+### Step 6: Process Agent Output (Orchestrator)
+
+The pattern-agent returns:
+- `themes[]` - Extracted themes with frequency and potential
+- `evolution[]` - How thinking has evolved
+- `underexplored[]` - Ideas worth developing
+- `connections[]` - Theme relationships
+- `content_queue[]` - Prioritized content recommendations
+
+### Step 7: Format Markdown Output (Orchestrator)
 
 ```markdown
 # Brain Dump Analysis
 **Period**: {timeframe}
-**Notes Analyzed**: {count}
-**Unique Themes**: {count}
+**Notes Analyzed**: {notes_analyzed}
+**Unique Themes**: {unique_themes_found}
+**Generated**: {timestamp}
 
 ## Content Pillars Identified
 
-### Pillar 1: {theme}
-- **Frequency**: {count} mentions
-- **Related ideas**: {list}
-- **Content potential**: {High/Medium/Low}
-- **Suggested angles**: {list}
+{For each theme sorted by frequency:}
+### {name}
+- **Frequency**: {frequency} mentions
+- **Pillars**: {pillar_alignment joined}
+- **Content Potential**: {content_potential}
+- **Suggested Angles**:
+{For each angle:}
+  - {angle}
+
+---
 
 ## Theme Evolution
-{How your thinking has evolved over time}
+
+{For each evolution item:}
+### {theme} ({trajectory})
+**Maturity**: {maturity}
+**First mentioned**: {earliest_mention}
+**Latest**: {latest_mention}
+
+{insight}
 
 ## Underexplored Ideas
-{Interesting ideas mentioned once but worth developing}
+
+{For each underexplored:}
+| Idea | Potential | Related Themes |
+|------|-----------|----------------|
+| {idea} | {potential} | {related_themes} |
+
+**Why develop**: {reason}
 
 ## Connection Map
-{How different ideas connect to each other}
+
+{For each connection:}
+- **{theme_a}** ↔ **{theme_b}** ({connection_type})
+  - Insight: {insight}
+  - Opportunity: {content_opportunity}
 
 ## Content Queue Recommendations
-{Prioritized list of content to create}
+
+| Priority | Topic | Pillar | Format |
+|----------|-------|--------|--------|
+{For each in content_queue sorted by priority:}
+| {priority} | {topic} | {pillar} | {suggested_format} |
+
+**Top Recommendation**: {content_queue[0].topic}
+*Reason*: {content_queue[0].reason}
 ```
 
-## Sub-Agent
+### Step 8: Write Output Files (Orchestrator)
 
-This command uses the `pattern-analyst` sub-agent.
-See `sub-agents/pattern-analyst.md` for detailed behavior.
+1. Create directory: `outputs/analysis/`
+2. Write to: `outputs/analysis/{YYYY-MM-DD}-brain-analysis.md`
+3. Write agent log: `outputs/logs/{YYYY-MM-DD}-pattern-agent.json`
+
+### Step 9: Mark Notion Entries Processed (sync-agent)
+
+For each Notion entry that was analyzed:
+
+```
+Task tool call:
+  - description: "Mark brain dump as processed"
+  - subagent_type: "general-purpose"
+  - model: "haiku"
+  - prompt: |
+      You are the sync-agent for PersonalOS.
+
+      ## Your Task
+
+      ```json
+      {
+        "operation": "update",
+        "database": "brain_dumps",
+        "database_id": "{from notion-mapping}",
+        "data": {
+          "page_id": "{notion entry id}",
+          "properties": { "Processed": true }
+        }
+      }
+      ```
+```
+
+### Step 10: Update STATUS.md (Orchestrator)
+
+1. Set **Last Command** to `/brain-dump-analysis`
+2. Set **Last Output** to output file path
+3. Add entry to **Activity Log** with summary
+
+## Agent Reference
+
+- **Pattern Agent**: `.claude/agents/pattern-agent.md`
+- **Sync Agent**: `.claude/agents/sync-agent.md`
 
 ## Input Sources
 
-Both sources are checked and combined for analysis:
-
 ### Local Files
-- Location: `brain-dumps/YYYY-MM/` folders
-- Secondary: `notes/` folder (if exists)
-- File format: Markdown (.md)
-- Best for: Longer, structured brain dumps from desktop
+- Location: `brain-dumps/YYYY-MM/`
+- Format: Markdown files
+- Best for: Longer, structured notes from desktop
 
 ### Notion Database
-- Database: "POS: Brain Dumps" (ID in notion-mapping.yaml)
+- Database: "POS: Brain Dumps"
 - Best for: Quick captures from mobile
-- All entries included in analysis
 - After analysis: `Processed` checkbox marked true
-
-### Deduplication Logic
-When the same content exists in both sources:
-- Match by title + date
-- Use local version as canonical (may have edits)
-- Still mark Notion entry as processed
-
-### Tip
-Run `/sync-brain-dumps` first to ensure Notion content is backed up locally.
-
-## Brain Dump Format
-
-Expected format for brain dumps:
-```markdown
-# Brain Dump - {date}
-
-## Ideas
-- Idea 1
-- Idea 2
-
-## Questions
-- What if...?
-- How can...?
-
-## Observations
-- Noticed that...
-- Interesting pattern...
-
-## Tags
-#ai #marketing #content-idea
-```
-
-## Example Output Location
-
-`outputs/analysis/2026-01-06-brain-analysis.md`
 
 ## Content Potential Scoring
 
-**High Potential**:
-- Mentioned 5+ times across notes
-- Aligns with 2+ content pillars
-- Timely (relates to current trends)
-- Unique angle (competitors not covering)
+| Level | Criteria |
+|-------|----------|
+| **High** | 5+ mentions, 2+ pillars, unique angle |
+| **Medium** | 2-4 mentions, 1 pillar, evergreen |
+| **Low** | 1 mention, tangential to pillars |
 
-**Medium Potential**:
-- Mentioned 2-4 times
-- Aligns with 1 content pillar
-- Evergreen topic
+## Example Output Location
 
-**Low Potential**:
-- Mentioned once
-- Tangential to pillars
-- Requires significant research
+`outputs/analysis/2026-01-08-brain-analysis.md`
 
 ## Performance Target
 
 - < 3 minutes for 100 notes
 - < 1 minute for 20 notes
 
-## Post-Execution: Update STATUS.md
+## Tip
 
-After completing this command, update `STATUS.md`:
-1. Set **Last Command** to `/brain-dump-analysis`
-2. Set **Last Output** to the output file path
-3. Add entry to **Activity Log** table:
-   - Date: Current date
-   - Command: /brain-dump-analysis
-   - Output: outputs/analysis/{date}-brain-analysis.md
-   - Notes: Summary (e.g., "15 notes, 4 themes, 3 content opportunities")
-4. Update **What's Pending** checklist if brain dumps are now populated
-5. Rotate out activity log entries older than 30 days
+Run `/sync-brain-dumps` first to ensure all Notion content is captured locally.

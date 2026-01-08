@@ -21,49 +21,104 @@ Generate a personalized daily briefing combining market intelligence with priori
 
 - `--include-todos`: Include pending tasks from Notion (default: false)
 
+## Orchestration Pattern
+
+This command uses **Task tool delegation** to the `intelligence-agent` in quick mode.
+
+```
+Orchestrator (this command)     →     intelligence-agent
+─────────────────────────────────────────────────────────
+1. Parse parameters
+2. Load configs
+3. Construct quick-mode input
+                                 →    4. Quick scan (high-priority sources)
+                                 →    5. Return top insights
+6. Receive JSON output           ←
+7. Query Notion todos (optional)
+8. Generate content opportunity
+9. Format brief markdown
+10. Write file
+11. Sync to Notion (sync-agent)
+12. Update STATUS.md
+```
+
 ## Execution Steps
 
-1. **Load Configuration**
-   - Read `config/topics.yaml` for priority topics
-   - Read `config/sources.yaml` for high-priority sources
-   - Read `config/notion-mapping.yaml` for database IDs
-   - Read `config/goals.yaml` for current metrics targets
+### Step 1: Load Configuration (Orchestrator)
 
-2. **Gather Market Intelligence**
-   Run lightweight version of /market-intelligence:
-   - Scan only high-priority sources
-   - Focus on last 24 hours
-   - Extract top 5-7 insights
+Read these config files:
+- `config/topics.yaml` - Get priority topics and content pillars
+- `config/sources.yaml` - Filter for high-priority sources only
+- `config/notion-mapping.yaml` - Get database IDs
+- `config/goals.yaml` - Get current metrics targets
 
-3. **Check Notion (Optional)**
-   If --include-todos:
-   - Query tasks database for pending items
-   - Filter for high-priority tasks
+### Step 2: Invoke Intelligence Agent - Quick Mode (Task Tool)
 
-4. **Generate Content Opportunity**
-   Based on trends and your content pillars:
-   - Identify 1 high-potential topic for today
-   - Provide angle suggestion
-   - Note why it's timely
+```
+Task tool call:
+  - description: "Quick market intelligence scan for daily brief"
+  - subagent_type: "general-purpose"
+  - model: "sonnet"
+  - prompt: |
+      You are the intelligence-agent for PersonalOS.
 
-5. **Compile Brief**
-   Create structured morning briefing with:
-   - Greeting with date
-   - Must-Know Today (3-5 critical updates)
-   - Metrics Snapshot (if available)
-   - Priority Tasks (if enabled)
-   - Content Opportunity of the Day
-   - Recommended Reading (2-3 articles)
-   - Focus Suggestion
+      [Read and include content of .claude/agents/intelligence-agent.md]
 
-6. **Save Output**
-   - Write to `outputs/daily/{date}-brief.md`
+      ## Your Task
 
-7. **Sync to Notion**
-   - Create entry in "POS: Daily Briefs" database
-   - Set status to "Generated"
+      Execute a QUICK market intelligence scan (for daily brief):
 
-## Output Format
+      ```json
+      {
+        "mode": "quick",
+        "timeframe": "24h",
+        "depth": "quick",
+        "topics": [/* from topics.yaml - primary only */],
+        "sources": [/* from sources.yaml - high priority only, max 5 */]
+      }
+      ```
+
+      Return valid JSON matching output schema. Target 5-7 insights max.
+```
+
+### Step 3: Query Notion Tasks (Optional - Orchestrator)
+
+If `--include-todos` flag:
+
+```
+Task tool call:
+  - description: "Fetch pending tasks from Notion"
+  - subagent_type: "general-purpose"
+  - model: "haiku"
+  - prompt: |
+      You are the sync-agent for PersonalOS.
+
+      [Include sync-agent.md content]
+
+      ## Your Task
+
+      ```json
+      {
+        "operation": "query",
+        "database": "tasks",
+        "database_id": "{from notion-mapping}",
+        "data": {
+          "filters": { "Status": "In Progress" }
+        }
+      }
+      ```
+```
+
+### Step 4: Generate Content Opportunity (Orchestrator)
+
+Based on intelligence-agent output:
+1. Review `content_opportunities` from agent response
+2. Select top opportunity by urgency and pillar fit
+3. Enrich with "why now" context
+
+### Step 5: Format Brief Markdown (Orchestrator)
+
+Transform agent JSON into brief format:
 
 ```markdown
 # Daily Brief: {date}
@@ -72,90 +127,104 @@ Generate a personalized daily briefing combining market intelligence with priori
 ## Good Morning, Enrique
 
 ### Must-Know Today
-{3-5 critical updates from overnight}
+
+{For each insight from agent where priority in ["High", "Medium"][:5]:}
+- **{title}**: {summary truncated to 150 chars} [→]({source_url})
 
 ### Metrics Snapshot
-- LinkedIn followers: {count} ({change})
-- Newsletter subscribers: {count} ({change})
-- Content published this week: {count}
+{From goals.yaml - display current vs target}
+- LinkedIn followers: {current} / {target}
+- Newsletter subscribers: {current} / {target}
+- Content published this week: {current}
 
+{If --include-todos and tasks returned:}
 ### Priority Tasks
-{Pulled from Notion Tasks if enabled}
+{For each task:}
+- [ ] {task title}
 
 ### Content Opportunity of the Day
-**Topic**: {topic}
-**Why now**: {relevance}
-**Suggested angle**: {angle}
+**Topic**: {content_opportunities[0].topic}
+**Why now**: {content_opportunities[0].reason}
+**Suggested angle**: {content_opportunities[0].angle}
+**Pillar**: {content_opportunities[0].pillar}
 
 ### Recommended Reading
-1. [{title}]({url}) - {why it matters}
-2. [{title}]({url}) - {why it matters}
+{For each insight[:3]:}
+1. [{title}]({source_url}) - {suggested_angle}
 
 ### Focus Suggestion
-{AI recommendation for today's priority}
+Based on today's intelligence: {generate 1-2 sentence recommendation}
 ```
 
-## Sub-Agent
+### Step 6: Write Output File (Orchestrator)
 
-This command uses the `intelligence-researcher` sub-agent in lightweight mode.
-See `sub-agents/intelligence-researcher.md` for detailed behavior.
+1. Create directory if needed: `outputs/daily/`
+2. Write to: `outputs/daily/{YYYY-MM-DD}-brief.md`
+3. Write agent log to: `outputs/logs/{YYYY-MM-DD}-daily-brief-agent.json`
 
-## Automation
+### Step 7: Sync to Notion (Orchestrator → sync-agent)
 
-This command is designed to run automatically via cron:
+```
+Task tool call:
+  - description: "Sync daily brief to Notion"
+  - subagent_type: "general-purpose"
+  - model: "haiku"
+  - prompt: |
+      You are the sync-agent for PersonalOS.
 
-```bash
-# Daily brief at 6:00 AM
-0 6 * * * cd /path/to/PersonalOS && claude "/daily-brief"
+      [Include sync-agent.md content]
+
+      ## Your Task
+
+      ```json
+      {
+        "operation": "write",
+        "database": "daily_briefs",
+        "database_id": "{from notion-mapping}",
+        "data": {
+          "properties": {
+            "Title": "Daily Brief - {date}",
+            "Date": "{today}",
+            "Status": "Generated"
+          },
+          "content": "{full markdown brief}"
+        }
+      }
+      ```
 ```
 
-See `scripts/cron/daily-brief.sh` for the automation script.
+### Step 8: Update STATUS.md (Orchestrator)
+
+1. Set **Last Command** to `/daily-brief`
+2. Set **Last Output** to `outputs/daily/{date}-brief.md`
+3. Add entry to **Activity Log**
+
+## Agent Reference
+
+- **Intelligence Agent**: `.claude/agents/intelligence-agent.md` (quick mode)
+- **Sync Agent**: `.claude/agents/sync-agent.md`
+
+## Length Variations
+
+| Length | Insights | Details |
+|--------|----------|---------|
+| quick | Top 3 | No metrics, no tasks, minimal |
+| standard | Top 5-7 | Full format |
+| comprehensive | All | Include medium-priority insights |
 
 ## Example Output Location
 
-`outputs/daily/2026-01-06-brief.md`
-
-## Notion Database
-
-Database: "POS: Daily Briefs"
-ID: Found in `config/notion-mapping.yaml` under `databases.daily_briefs`
-
-Properties to populate:
-- Date: Current date (title)
-- Generated: Timestamp
-- Priority Updates: Top insights
-- Content Opportunity: Today's topic suggestion
-- Full Brief: Complete markdown content
-- Status: "Generated"
-
-## Personalization
-
-The brief includes personalization based on:
-- User context from CLAUDE.md
-- Current goals from config/goals.yaml
-- Content pillars from topics.yaml
-- Recent content performance (future)
+`outputs/daily/2026-01-08-brief.md`
 
 ## Performance Target
 
-- < 2 minutes for standard brief
-- < 1 minute for quick brief
+- Quick: < 1 minute
+- Standard: < 2 minutes
+- Comprehensive: < 3 minutes
 
-## Best Practices
+## Automation
 
-1. Run first thing in the morning
-2. Review and mark as "Reviewed" in Notion
-3. Flag any items that need deeper analysis
-4. Use Content Opportunity to guide daily content focus
-
-## Post-Execution: Update STATUS.md
-
-After completing this command, update `STATUS.md`:
-1. Set **Last Command** to `/daily-brief`
-2. Set **Last Output** to the output file path
-3. Add entry to **Activity Log** table:
-   - Date: Current date
-   - Command: /daily-brief
-   - Output: outputs/daily/{date}-brief.md
-   - Notes: Brief summary (e.g., "5 insights, 1 content opportunity")
-4. Rotate out activity log entries older than 30 days
+Designed to run via cron at 6:00 AM:
+```bash
+0 6 * * * cd /path/to/PersonalOS && claude "/daily-brief"
+```
