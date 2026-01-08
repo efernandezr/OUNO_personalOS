@@ -1,32 +1,122 @@
-Please create a comprehensive checkpoint commit with the following steps:
+---
+description: Create a checkpoint commit with all current changes
+---
 
-1. **Initialize Git if needed**: Run `git init` if git has not been instantiated for the project yet.
+# Checkpoint
 
-2. **Analyze all changes**:
-   - Run `git status` to see all tracked and untracked files
-   - Run `git diff` to see detailed changes in tracked files
-   - Run `git log -5 --oneline` to understand the commit message style of this repository
+Create a comprehensive checkpoint commit following PersonalOS conventions.
 
-3. **Stage everything**:
-   - Add ALL tracked changes (modified and deleted files)
-   - Add ALL untracked files (new files)
-   - Use `git add -A` or `git add .` to stage everything
+## Instructions
 
-4. **Create a detailed commit message**:
-   - **First line**: Write a clear, concise summary (50-72 chars) describing the primary change
-     - Use imperative mood (e.g., "Add feature" not "Added feature")
-     - Examples: "feat: add user authentication", "fix: resolve database connection issue", "refactor: improve API route structure"
-   - **Body**: Provide a detailed description including:
-     - What changes were made (list of key modifications)
-     - Why these changes were made (purpose/motivation)
-     - Any important technical details or decisions
-     - Breaking changes or migration notes if applicable
-   - **Footer**: Include co-author attribution as shown in the Git Safety Protocol
+### 1. Pre-flight Checks
 
-5. **Execute the commit**: Create the commit with the properly formatted message following this repository's conventions.
+First, verify the repository state:
 
-IMPORTANT:
-- Do NOT skip any files - include everything
-- Make the commit message descriptive enough that someone reviewing the git log can understand what was accomplished
-- Follow the project's existing commit message conventions (check git log first)
-- Include the Claude Code co-author attribution in the commit message
+```bash
+git status
+git diff --stat
+```
+
+**Safety Check**: Ensure no personal configs are accidentally staged:
+- `config/*.yaml` files should NOT appear (they're gitignored)
+- `outputs/`, `brain-dumps/`, `logs/` should NOT appear
+- `.claude/settings.local.json` should NOT appear
+
+If any of these appear, check `.gitignore` is working correctly.
+
+### 2. Analyze Changes
+
+Understand what's being committed:
+
+```bash
+# See all changes
+git status
+
+# See detailed diff for modified files
+git diff
+
+# Check recent commit style
+git log -5 --oneline
+```
+
+### 3. Stage All Changes
+
+```bash
+git add -A
+```
+
+Verify staging:
+```bash
+git status
+```
+
+### 4. Create Commit Message
+
+Follow PersonalOS commit conventions (from CLAUDE.md):
+
+**Format:**
+```
+type: short description (50-72 chars)
+
+- Detail 1
+- Detail 2
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+```
+
+**Commit Types:**
+| Type | Use For |
+|------|---------|
+| `feat` | New features, commands, capabilities |
+| `fix` | Bug fixes |
+| `docs` | Documentation updates (README, CLAUDE.md) |
+| `refactor` | Code restructuring without behavior change |
+| `chore` | Maintenance, config updates, dependencies |
+
+**Examples:**
+- `feat: add /weekly-dashboard command`
+- `fix: resolve Notion sync retry logic`
+- `docs: update voice profile documentation`
+- `refactor: simplify intelligence-researcher agent`
+- `chore: update source URLs in config template`
+
+### 5. Execute Commit
+
+Create the commit with a properly formatted message using HEREDOC:
+
+```bash
+git commit -m "$(cat <<'EOF'
+type: short description
+
+- What changed
+- Why it changed
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+### 6. Post-Commit (Optional)
+
+After committing, consider:
+- Update `STATUS.md` if significant changes were made
+- Run `/sync-status` to refresh project state
+
+## Important Notes
+
+- **Include everything**: Don't skip files - this is a checkpoint
+- **Be descriptive**: Someone reading `git log` should understand what was accomplished
+- **Framework only**: Only framework files should be committed (templates, commands, agents, docs)
+- **Personal data stays local**: Configs, outputs, brain-dumps are gitignored for a reason
+
+## When to Use
+
+Use `/checkpoint` when you want to:
+- Save progress on framework development
+- Create a restore point before major changes
+- Prepare for pushing to GitHub
+- Document a completed feature or fix

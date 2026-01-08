@@ -70,6 +70,7 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 - `/add-story` - Add personal stories and experiences to context
 - `/sync-status` - Rebuild STATUS.md from project state
 - `/sync-brain-dumps` - Pull brain dumps and personal context from Notion
+- `/checkpoint` - Create a git checkpoint commit with all changes
 
 ### Future Commands (Not Yet Implemented)
 - `/competitive-analysis` - Track competitor content and positioning

@@ -28,7 +28,7 @@ PersonalOS is a collection of Claude Code slash commands and sub-agents designed
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/PersonalOS.git
+git clone git@github.com:efernandezr/OUNO_personalOS.git
 cd PersonalOS
 
 # Run the setup script
