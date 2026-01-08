@@ -279,6 +279,96 @@ Task tool call:
 
 `outputs/analysis/2026-01-08-brain-analysis.md`
 
+## Retry Configuration
+
+### Notion Operations (via sync-agent)
+```yaml
+max_retries: 3
+backoff:
+  initial: 2000  # 2 seconds
+  multiplier: 2  # exponential: 2s, 4s, 8s
+  max: 8000      # 8 seconds max
+retry_on:
+  - connection_error
+  - timeout
+  - status_5xx
+  - rate_limit
+dont_retry_on:
+  - authentication_error
+  - invalid_database_id
+  - permission_denied
+```
+
+### Pattern Agent Operations
+```yaml
+max_retries: 2
+backoff:
+  initial: 1000
+  multiplier: 2
+retry_on:
+  - task_tool_error
+  - incomplete_response
+dont_retry_on:
+  - invalid_input (fix input instead)
+```
+
+## JSON Validation
+
+After receiving pattern-agent output, validate against schema.
+
+### Schema Reference
+```
+.claude/utils/schemas.json → agents.pattern-agent
+```
+
+### Required Fields
+- `themes` (array)
+- `evolution` (array)
+- `content_queue` (array)
+- `notes_analyzed` (integer)
+- `unique_themes_found` (integer)
+- `analysis_timestamp` (ISO string)
+
+### Validation on Failure
+If validation fails:
+1. Retry pattern-agent with feedback about missing fields
+2. Max 2 validation retries
+3. If still failing, proceed with partial data and warning banner
+
+## Partial Results Handling
+
+### Scenario: No Notion Brain Dumps Found
+```markdown
+> ℹ️ **LOCAL FILES ONLY**
+> No unprocessed Notion brain dumps found.
+> Analysis based on {n} local files only.
+```
+
+### Scenario: No Notes Found Anywhere
+```markdown
+> ⚠️ **NO NOTES TO ANALYZE**
+> No brain dumps found in Notion or local storage.
+>
+> **To capture ideas**:
+> - Add notes to `brain-dumps/YYYY-MM/` folder
+> - Or create entries in Notion "POS: Brain Dumps" database
+> - Run `/sync-brain-dumps` to pull Notion content locally
+```
+
+### Scenario: Pattern Agent Partial Failure
+```markdown
+> ⚠️ **PARTIAL ANALYSIS**
+> Some analysis sections incomplete.
+> {Specific issues listed}
+```
+
+### Scenario: Notion Update Fails
+Continue without blocking - mark in output:
+```markdown
+**Notion Status**: ❌ Could not mark entries as processed
+Local analysis complete. Re-run to retry Notion sync.
+```
+
 ## Performance Target
 
 - < 3 minutes for 100 notes

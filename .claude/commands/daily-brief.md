@@ -227,6 +227,88 @@ Task tool call:
 
 `outputs/daily/2026-01-08-brief.md`
 
+## Retry Configuration
+
+### Intelligence Agent (Quick Mode)
+```yaml
+max_retries: 3
+backoff:
+  initial: 1000  # 1 second
+  multiplier: 2  # exponential: 1s, 2s, 4s
+  max: 4000
+retry_on:
+  - connection_error
+  - timeout
+  - firecrawl_error
+dont_retry_on:
+  - invalid_input
+```
+
+### Notion Operations
+```yaml
+max_retries: 3
+backoff:
+  initial: 2000
+  multiplier: 2
+  max: 8000
+retry_on:
+  - connection_error
+  - timeout
+  - status_5xx
+dont_retry_on:
+  - authentication_error
+```
+
+## JSON Validation
+
+### Schema Reference
+```
+.claude/utils/schemas.json → agents.intelligence-agent
+```
+
+### Required Fields (Quick Mode)
+- `insights` (array, minimum 1)
+- `content_opportunities` (array)
+- `sources_scanned` (integer)
+- `scan_metadata.degraded_mode` (boolean)
+
+### Validation Notes
+- Quick mode may return fewer insights - this is acceptable
+- Validate but be lenient on optional fields
+- Log warnings, don't fail on non-critical issues
+
+## Partial Results Handling
+
+### Scenario: Intelligence Agent Fails Completely
+Generate minimal brief with warning:
+```markdown
+# Daily Brief: {date}
+
+> ⚠️ **INTELLIGENCE UNAVAILABLE**
+> Could not scan sources. Using cached recommendations.
+
+### Metrics Snapshot
+{from goals.yaml}
+
+### Focus Suggestion
+Review yesterday's brief for pending opportunities.
+```
+
+### Scenario: Some Sources Failed
+Add note but continue:
+```markdown
+> ℹ️ Scanned {success}/{total} sources. Some sources unavailable.
+```
+
+### Scenario: Notion Sync Fails
+Save locally, note in brief:
+```markdown
+**Sync Status**: Saved locally (Notion unavailable)
+```
+
+### Scenario: No Tasks (when --include-todos)
+Omit section gracefully - no error, just skip.
+
 ## Performance Target
 
 - Quick: < 1 minute

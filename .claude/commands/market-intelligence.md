@@ -239,6 +239,157 @@ Task tool call:
 - If >50% sources failed, add warning banner to output
 - Always produce output even with partial data
 
+## Retry Configuration
+
+### Firecrawl Operations (via intelligence-agent)
+```yaml
+max_retries: 3
+backoff:
+  initial: 1000  # 1 second
+  multiplier: 2  # exponential: 1s, 2s, 4s
+  max: 4000      # 4 seconds max
+retry_on:
+  - connection_error
+  - timeout
+  - status_5xx
+  - rate_limit (429)
+dont_retry_on:
+  - status_4xx (except 429)
+  - invalid_url
+  - access_denied
+```
+
+### Notion Sync Operations (via sync-agent)
+```yaml
+max_retries: 3
+backoff:
+  initial: 2000  # 2 seconds
+  multiplier: 2  # exponential: 2s, 4s, 8s
+  max: 8000      # 8 seconds max
+retry_on:
+  - connection_error
+  - timeout
+  - status_5xx
+  - rate_limit
+dont_retry_on:
+  - authentication_error
+  - invalid_database_id
+  - permission_denied
+```
+
+### Retry Pattern for Agent Invocation
+
+If intelligence-agent Task tool call fails:
+1. Log the error
+2. Wait `backoff.initial * (backoff.multiplier ^ attempt)` milliseconds
+3. Retry the Task tool call (up to max_retries)
+4. If all retries fail, proceed to partial results handling
+
+## JSON Validation
+
+After receiving agent output, validate against schema before processing.
+
+### Schema Reference
+```
+.claude/utils/schemas.json → agents.intelligence-agent
+```
+
+### Validation Steps
+
+1. **Parse JSON**: If agent returns malformed JSON:
+   - Log parsing error
+   - Retry agent invocation with note: "Previous response was not valid JSON. Return valid JSON only."
+   - Max 2 parse retries before failing
+
+2. **Validate required fields**: Check these exist:
+   - `insights` (array)
+   - `trends` (array)
+   - `content_opportunities` (array)
+   - `sources_scanned` (integer)
+   - `scan_timestamp` (ISO string)
+   - `scan_metadata` (object with `degraded_mode`)
+
+3. **Validate field types**: Use schema to verify:
+   - `insights[].priority` is one of ["High", "Medium", "Low"]
+   - `insights[].source_url` is valid URI format
+   - `trends[].trajectory` is one of ["rising", "stable", "declining"]
+
+4. **Handle validation failures**:
+   - If critical field missing: retry agent invocation with specific feedback
+   - If non-critical field wrong type: log warning, continue with default
+   - Max 2 validation retries before proceeding with partial data
+
+### Validation Error Response
+
+If validation fails after retries, create partial output:
+```markdown
+> ⚠️ **DATA QUALITY WARNING**
+> Agent output had validation issues: {list specific issues}
+> Some sections may be incomplete or missing.
+```
+
+## Partial Results Handling
+
+If any operation fails during execution, follow this partial results pattern:
+
+### Scenario: Intelligence Agent Returns Partial Data
+
+If agent returns some valid data but has issues:
+1. Extract and use valid portions
+2. Add banner to output indicating partial results
+3. Log what failed in agent log file
+
+Example banner:
+```markdown
+> ⚠️ **PARTIAL RESULTS**
+> - Sources scanned: 8/12 (4 failed)
+> - Trend analysis: Incomplete (insufficient source coverage)
+> - See Source Log for failed sources
+```
+
+### Scenario: Notion Sync Fails
+
+If sync-agent fails after retries:
+1. Continue with local file save (already completed)
+2. Add note to output:
+```markdown
+**Notion Sync**: ❌ Failed after 3 retries. Saved locally only.
+Run `/sync-status` later to retry sync.
+```
+3. Log sync failure to `outputs/logs/{date}-sync-errors.json`
+
+### Scenario: More than 50% Sources Failed
+
+Add prominent warning:
+```markdown
+> ⚠️ **LIMITED INTELLIGENCE**
+> {failed_count}/{total_count} sources failed to respond.
+> Results may be incomplete. Consider running again later.
+>
+> **Failed Sources**:
+> - {source_name}: {error_reason}
+```
+
+### Error Log Format
+
+Write errors to `outputs/logs/{YYYY-MM-DD}-market-intelligence-errors.json`:
+```json
+{
+  "command": "/market-intelligence",
+  "timestamp": "ISO date",
+  "errors": [
+    {
+      "phase": "agent_invocation" | "validation" | "notion_sync",
+      "attempt": 1,
+      "error": "error message",
+      "resolved": true | false
+    }
+  ],
+  "partial_results": true | false,
+  "recovery_actions": ["description of what was recovered"]
+}
+```
+
 ## Example Output Location
 
 `outputs/intelligence/2026-01-08-market-brief.md`

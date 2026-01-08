@@ -212,6 +212,71 @@ Add new sources to your monitoring configuration.
 
 **Updates:** `config/sources.yaml` or `config/competitors.yaml`
 
+---
+
+### `/voice-calibrate`
+
+Analyze your writing samples to calibrate the voice profile for authentic content generation.
+
+```bash
+# Run calibration with all available samples
+/voice-calibrate
+
+# Require minimum 10 samples for higher confidence
+/voice-calibrate --min-samples 10
+
+# Calibrate from LinkedIn posts only
+/voice-calibrate --platform linkedin
+
+# Auto-approve recommendations (skip review)
+/voice-calibrate --auto-approve
+
+# Focus on specific voice aspects
+/voice-calibrate --focus hooks,vocabulary
+```
+
+**Input:** Samples from `inputs/samples/linkedin-posts/` and `inputs/samples/newsletter-samples/`
+
+**Output:**
+- Calibration report: `outputs/analysis/{date}-voice-calibration.md`
+- Updated: `config/voice-profile.yaml` (with your approval)
+
+**Confidence Levels:**
+| Samples | Confidence | Analysis Depth |
+|---------|------------|----------------|
+| 1-4 | Low | Basic patterns only |
+| 5-10 | Medium | Vocabulary + structure |
+| 10+ | High | Full voice fingerprint |
+
+---
+
+### `/add-story`
+
+Add personal stories and experiences to your context for authentic content generation.
+
+```bash
+# Interactive story capture
+/add-story
+
+# Add with description
+/add-story I want to add a story about failing fast from my startup days
+
+# Specify type directly
+/add-story --type transformation
+
+# Capture extended narrative
+/add-story --full
+```
+
+**Story Templates:** The command offers structured templates for:
+- **Transformation stories**: Career pivots, mindset shifts, skill development
+- **Failure/Learning stories**: Mistakes, setbacks, hard lessons
+- **Milestone stories**: Achievements, wins, proof points
+
+**Updates:** `config/personal-context.yaml`
+
+**Notion Sync:** Creates entry in "POS: Personal Context" database
+
 ## Directory Structure
 
 ```
@@ -224,6 +289,8 @@ PersonalOS/
 │   ├── sources.yaml         # News sources and blogs
 │   ├── competitors.yaml     # Competitor profiles
 │   ├── voice-profile.yaml   # Your writing voice
+│   ├── personal-context.yaml # Personal stories & experiences
+│   ├── personal-context-guide.md # Story collection guide
 │   ├── goals.yaml           # Tracking goals
 │   └── notion-mapping.yaml  # Notion database IDs
 │
@@ -233,23 +300,31 @@ PersonalOS/
 │   ├── brain-dump-analysis.md
 │   ├── content-repurpose.md
 │   ├── add-source.md
+│   ├── add-story.md
+│   ├── voice-calibrate.md
 │   ├── sync-status.md
-│   └── sync-brain-dumps.md
+│   ├── sync-brain-dumps.md
+│   └── checkpoint.md
 │
-├── sub-agents/              # Specialized agent definitions
-│   ├── intelligence-researcher.md
-│   ├── competitive-analyst.md
-│   ├── content-creator.md
-│   ├── pattern-analyst.md
-│   └── metrics-analyst.md
+├── .claude/agents/          # Operative agent definitions
+│   ├── intelligence-agent.md
+│   ├── pattern-agent.md
+│   ├── content-agent.md
+│   ├── voice-calibration-agent.md
+│   ├── sync-agent.md
+│   └── sync-brain-dumps-agent.md
+│
+├── .claude/utils/           # Utility files
+│   └── schemas.json        # JSON validation schemas
 │
 ├── brain-dumps/             # Your notes and ideas
 │   └── YYYY-MM/            # Organized by month
 │
 ├── inputs/                  # Input materials
 │   ├── samples/            # Voice calibration samples
-│   │   ├── linkedin-posts/
-│   │   └── newsletter-samples/
+│   │   ├── linkedin-posts/ # LinkedIn post samples (.md files)
+│   │   ├── newsletter-samples/ # Newsletter samples (.md files)
+│   │   └── .metadata.yaml  # Sample tracking metadata
 │   └── pdfs/               # PDFs for analysis
 │
 ├── outputs/                 # Generated content
@@ -339,17 +414,20 @@ PersonalOS syncs with 6 Notion databases:
 
 Database IDs are stored in `config/notion-mapping.yaml`.
 
-## Sub-Agents
+## Operative Agents
 
-PersonalOS uses specialized sub-agents for different tasks:
+PersonalOS uses **Task tool delegation** to specialized agents for complex tasks:
 
-| Agent | Purpose |
-|-------|---------|
-| Intelligence Researcher | Web scraping, trend analysis, source monitoring |
-| Competitive Analyst | Competitor content tracking, positioning analysis |
-| Content Creator | Voice-matched content generation |
-| Pattern Analyst | Theme extraction from brain dumps |
-| Metrics Analyst | Data tracking and dashboard generation |
+| Agent | Purpose | Model |
+|-------|---------|-------|
+| `intelligence-agent` | Web scraping, trend synthesis, source scanning | Sonnet |
+| `pattern-agent` | Theme extraction, note analysis, content opportunities | Sonnet |
+| `content-agent` | Voice-matched content generation for all platforms | Sonnet |
+| `voice-calibration-agent` | Analyze samples, extract voice patterns | Sonnet |
+| `sync-agent` | Notion read/write operations | Haiku |
+| `sync-brain-dumps-agent` | Pull brain dumps from Notion | Haiku |
+
+Agent definitions are in `.claude/agents/` and can be customized to improve output quality.
 
 ## Workflows
 
@@ -437,22 +515,81 @@ For best results, structure your brain dumps like this:
 
 ### Content not matching voice
 
-1. Add more samples to `inputs/samples/`
-2. Run `/voice-calibrate` (when available)
-3. Adjust `config/voice-profile.yaml` manually
+1. Add more samples to `inputs/samples/linkedin-posts/` and `inputs/samples/newsletter-samples/`
+2. Run `/voice-calibrate` to analyze and calibrate
+3. Review the calibration report in `outputs/analysis/`
+4. If needed, manually adjust `config/voice-profile.yaml`
+
+## Voice Calibration Setup
+
+Voice calibration ensures generated content matches your authentic writing style. Here's how to set it up:
+
+### Step 1: Add Writing Samples
+
+Add your best-performing content to the samples folders:
+
+**LinkedIn Posts:**
+```bash
+# Create sample files in inputs/samples/linkedin-posts/
+# Use this format:
+
+inputs/samples/linkedin-posts/post-001.md
+```
+
+```markdown
+---
+date: 2025-12-15
+engagement: high
+topics: [AI, marketing, transformation]
+---
+
+Your LinkedIn post content here...
+```
+
+**Newsletter Samples:**
+```bash
+inputs/samples/newsletter-samples/issue-001.md
+```
+
+```markdown
+---
+date: 2025-12-01
+type: newsletter
+topics: [AI agents, enterprise]
+---
+
+Your newsletter content here...
+```
+
+### Step 2: Run Calibration
+
+```bash
+# Once you have 5+ samples
+/voice-calibrate
+```
+
+### Step 3: Review and Approve
+
+The calibration will:
+1. Analyze sentence patterns, vocabulary, and structure
+2. Show you recommended updates to `voice-profile.yaml`
+3. Ask for approval before making changes
+
+### Tips for Better Calibration
+
+- **More samples = better results**: 10+ samples recommended
+- **Include variety**: Different tones, topics, lengths
+- **Use high-performers**: Posts with good engagement are best
+- **Update regularly**: Re-run after major content pivots
 
 ## Roadmap
 
 ### Coming Soon
-- `/voice-calibrate` - Analyze your content to build voice profile
 - `/competitive-analysis` - Deep competitor monitoring
 - `/weekly-dashboard` - Automated weekly metrics review
 - `/meeting-prep` - Prepare for meetings with context
 
-### Future
-- Cron automation for daily briefs
-- Archive rotation (auto-archive 90+ day content)
-- Performance analytics integration
+> **Detailed tracking**: See `planning/ROADMAP.md` for full feature roadmap, ideas backlog, and progress tracking (gitignored, local only).
 
 ## Project Structure
 

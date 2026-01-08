@@ -1,0 +1,384 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://personalos.dev/schemas/agents",
+  "description": "JSON schemas for validating PersonalOS agent outputs",
+  "version": "1.0",
+
+  "definitions": {
+    "priority": {
+      "type": "string",
+      "enum": ["High", "Medium", "Low"]
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "isoTimestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+    }
+  },
+
+  "agents": {
+    "intelligence-agent": {
+      "type": "object",
+      "required": ["insights", "trends", "content_opportunities", "sources_scanned", "scan_timestamp", "scan_metadata"],
+      "properties": {
+        "insights": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "priority", "topics", "source_url", "source_name", "summary", "content_potential", "suggested_angle"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1 },
+              "priority": { "$ref": "#/definitions/priority" },
+              "topics": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "source_url": { "type": "string", "format": "uri" },
+              "source_name": { "type": "string" },
+              "summary": { "type": "string", "minLength": 10 },
+              "content_potential": { "$ref": "#/definitions/priority" },
+              "suggested_angle": { "type": "string", "minLength": 5 }
+            }
+          }
+        },
+        "trends": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "evidence", "trajectory", "content_opportunity"],
+            "properties": {
+              "name": { "type": "string" },
+              "evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "trajectory": { "type": "string", "enum": ["rising", "stable", "declining"] },
+              "content_opportunity": { "type": "string" }
+            }
+          }
+        },
+        "content_opportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["topic", "angle", "urgency", "pillar", "reason"],
+            "properties": {
+              "topic": { "type": "string" },
+              "angle": { "type": "string" },
+              "urgency": { "$ref": "#/definitions/priority" },
+              "pillar": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "sources_scanned": { "type": "integer", "minimum": 0 },
+        "sources_failed": { "type": "array", "items": { "type": "string" } },
+        "scan_timestamp": { "$ref": "#/definitions/isoTimestamp" },
+        "scan_metadata": {
+          "type": "object",
+          "required": ["primary_tool", "degraded_mode"],
+          "properties": {
+            "primary_tool": { "type": "string" },
+            "firecrawl_success_count": { "type": "integer", "minimum": 0 },
+            "fallback_count": { "type": "integer", "minimum": 0 },
+            "degraded_mode": { "type": "boolean" },
+            "degraded_reason": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "pattern-agent": {
+      "type": "object",
+      "required": ["themes", "evolution", "content_queue", "notes_analyzed", "unique_themes_found", "analysis_timestamp"],
+      "properties": {
+        "themes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "frequency", "pillar_alignment", "content_potential", "suggested_angles", "example_notes"],
+            "properties": {
+              "name": { "type": "string" },
+              "frequency": { "type": "integer", "minimum": 1 },
+              "pillar_alignment": { "type": "array", "items": { "type": "string" } },
+              "content_potential": { "$ref": "#/definitions/priority" },
+              "suggested_angles": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "example_notes": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "evolution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["theme", "trajectory", "maturity"],
+            "properties": {
+              "theme": { "type": "string" },
+              "trajectory": { "type": "string", "enum": ["deepening", "emerging", "stable", "fading"] },
+              "maturity": { "type": "string", "enum": ["nascent", "developing", "mature"] },
+              "earliest_mention": { "$ref": "#/definitions/isoDate" },
+              "latest_mention": { "$ref": "#/definitions/isoDate" },
+              "insight": { "type": "string" }
+            }
+          }
+        },
+        "underexplored": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["idea", "potential", "reason"],
+            "properties": {
+              "idea": { "type": "string" },
+              "potential": { "type": "string", "enum": ["High", "Medium"] },
+              "reason": { "type": "string" },
+              "related_themes": { "type": "array", "items": { "type": "string" } },
+              "source_note": { "type": "string" }
+            }
+          }
+        },
+        "connections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["theme_a", "theme_b", "connection_type", "insight", "content_opportunity"],
+            "properties": {
+              "theme_a": { "type": "string" },
+              "theme_b": { "type": "string" },
+              "connection_type": { "type": "string", "enum": ["builds_on", "contrasts", "complements", "synthesizes"] },
+              "insight": { "type": "string" },
+              "content_opportunity": { "type": "string" }
+            }
+          }
+        },
+        "content_queue": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["priority", "topic", "reason", "pillar", "themes_involved", "suggested_format"],
+            "properties": {
+              "priority": { "type": "integer", "minimum": 1 },
+              "topic": { "type": "string" },
+              "reason": { "type": "string" },
+              "pillar": { "type": "string" },
+              "themes_involved": { "type": "array", "items": { "type": "string" } },
+              "suggested_format": { "type": "string", "enum": ["linkedin", "twitter", "newsletter", "long_form"] }
+            }
+          }
+        },
+        "notes_analyzed": { "type": "integer", "minimum": 0 },
+        "unique_themes_found": { "type": "integer", "minimum": 0 },
+        "analysis_timestamp": { "$ref": "#/definitions/isoTimestamp" }
+      }
+    },
+
+    "content-agent": {
+      "type": "object",
+      "required": ["source_analysis", "generation_timestamp"],
+      "properties": {
+        "linkedin": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["version", "hook", "body", "cta", "hashtags", "character_count", "tone", "key_message"],
+            "properties": {
+              "version": { "type": "integer", "minimum": 1 },
+              "hook": { "type": "string", "minLength": 10 },
+              "body": { "type": "string", "minLength": 100 },
+              "cta": { "type": "string" },
+              "hashtags": { "type": "array", "items": { "type": "string" }, "minItems": 3, "maxItems": 5 },
+              "character_count": { "type": "integer", "minimum": 500, "maximum": 2000 },
+              "tone": { "type": "string", "enum": ["educational", "provocative", "storytelling"] },
+              "stories_used": { "type": "array", "items": { "type": "string" } },
+              "key_message": { "type": "string" }
+            }
+          }
+        },
+        "twitter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["tweets", "hook_tweet", "cta_tweet", "thread_count", "tone"],
+            "properties": {
+              "tweets": { "type": "array", "items": { "type": "string", "maxLength": 280 }, "minItems": 4, "maxItems": 12 },
+              "hook_tweet": { "type": "string", "maxLength": 280 },
+              "cta_tweet": { "type": "string", "maxLength": 280 },
+              "thread_count": { "type": "integer", "minimum": 4, "maximum": 12 },
+              "tone": { "type": "string" }
+            }
+          }
+        },
+        "newsletter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["intro", "main_content", "takeaways", "word_count", "tone"],
+            "properties": {
+              "intro": { "type": "string", "minLength": 50 },
+              "main_content": { "type": "string", "minLength": 200 },
+              "takeaways": { "type": "array", "items": { "type": "string" }, "minItems": 3, "maxItems": 5 },
+              "word_count": { "type": "integer", "minimum": 400, "maximum": 1000 },
+              "stories_used": { "type": "array", "items": { "type": "string" } },
+              "tone": { "type": "string" }
+            }
+          }
+        },
+        "source_analysis": {
+          "type": "object",
+          "required": ["main_thesis", "key_points"],
+          "properties": {
+            "main_thesis": { "type": "string" },
+            "key_points": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "data_points": { "type": "array", "items": { "type": "string" } },
+            "matched_themes": { "type": "array", "items": { "type": "string" } },
+            "matched_stories": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "generation_timestamp": { "$ref": "#/definitions/isoTimestamp" }
+      }
+    },
+
+    "sync-agent": {
+      "type": "object",
+      "required": ["success", "operation"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "operation": { "type": "string" },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string" },
+              "url": { "type": "string" },
+              "properties": { "type": "object" },
+              "content": { "type": "string" }
+            }
+          }
+        },
+        "created_ids": { "type": "array", "items": { "type": "string" } },
+        "updated_count": { "type": "integer", "minimum": 0 },
+        "error": { "type": ["string", "null"] }
+      }
+    },
+
+    "sync-brain-dumps-agent": {
+      "type": "object",
+      "required": ["synced", "skipped", "errors", "total_synced", "total_skipped", "sync_timestamp"],
+      "properties": {
+        "synced": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "date", "local_path", "notion_id"],
+            "properties": {
+              "title": { "type": "string" },
+              "date": { "$ref": "#/definitions/isoDate" },
+              "local_path": { "type": "string" },
+              "notion_id": { "type": "string" }
+            }
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "reason"],
+            "properties": {
+              "title": { "type": "string" },
+              "reason": { "type": "string", "enum": ["already_exists", "no_content", "invalid_date"] }
+            }
+          }
+        },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "total_synced": { "type": "integer", "minimum": 0 },
+        "total_skipped": { "type": "integer", "minimum": 0 },
+        "sync_timestamp": { "$ref": "#/definitions/isoTimestamp" }
+      }
+    },
+
+    "voice-calibration-agent": {
+      "type": "object",
+      "required": ["analysis", "recommendations", "confidence", "calibration_timestamp"],
+      "properties": {
+        "analysis": {
+          "type": "object",
+          "required": ["sample_summary", "sentence_structure", "vocabulary_patterns", "rhetorical_patterns", "tone_characteristics"],
+          "properties": {
+            "sample_summary": {
+              "type": "object",
+              "required": ["total_samples", "by_platform"],
+              "properties": {
+                "total_samples": { "type": "integer", "minimum": 1 },
+                "by_platform": {
+                  "type": "object",
+                  "properties": {
+                    "linkedin": { "type": "integer", "minimum": 0 },
+                    "newsletter": { "type": "integer", "minimum": 0 },
+                    "twitter": { "type": "integer", "minimum": 0 }
+                  }
+                },
+                "date_range": {
+                  "type": "object",
+                  "properties": {
+                    "earliest": { "$ref": "#/definitions/isoDate" },
+                    "latest": { "$ref": "#/definitions/isoDate" }
+                  }
+                }
+              }
+            },
+            "sentence_structure": {
+              "type": "object",
+              "properties": {
+                "average_length": { "type": "number" },
+                "length_distribution": { "type": "object" },
+                "complexity": { "type": "string", "enum": ["simple", "moderate", "complex"] },
+                "patterns": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "vocabulary_patterns": {
+              "type": "object",
+              "properties": {
+                "frequently_used": { "type": "array" },
+                "unique_expressions": { "type": "array", "items": { "type": "string" } },
+                "avoided_in_samples": { "type": "array", "items": { "type": "string" } },
+                "technical_density": { "type": "string", "enum": ["low", "medium", "high"] }
+              }
+            },
+            "rhetorical_patterns": { "type": "object" },
+            "tone_characteristics": {
+              "type": "object",
+              "properties": {
+                "detected_tone": { "type": "string" },
+                "attributes": { "type": "array", "items": { "type": "string" } },
+                "consistency": { "type": "string", "enum": ["high", "medium", "low"] }
+              }
+            }
+          }
+        },
+        "recommendations": {
+          "type": "object",
+          "properties": {
+            "tone_updates": { "type": "object" },
+            "vocabulary_updates": { "type": "object" },
+            "pattern_updates": { "type": "object" },
+            "structure_updates": { "type": "object" }
+          }
+        },
+        "confidence": {
+          "type": "object",
+          "required": ["overall", "score", "factors"],
+          "properties": {
+            "overall": { "type": "string", "enum": ["high", "medium", "low"] },
+            "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "factors": { "type": "object" },
+            "improve_confidence_by": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "calibration_timestamp": { "$ref": "#/definitions/isoTimestamp" }
+      }
+    }
+  },
+
+  "validation": {
+    "instructions": "To validate agent output, use the schema corresponding to the agent name from agents.{agent-name}. Validation should check: 1) Required fields present, 2) Field types match, 3) Enums contain valid values, 4) Arrays meet min/max constraints.",
+    "error_handling": "If validation fails, return error with: { agent: 'agent-name', errors: [{ field: 'path.to.field', message: 'description' }] }. Do NOT reject output for non-critical fields - log warning and continue."
+  }
+}

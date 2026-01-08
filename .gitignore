@@ -68,3 +68,9 @@ Desktop.ini
 *.temp
 *.bak
 *.backup
+
+# ===========================================
+# Planning & Local Docs
+# ===========================================
+# Personal roadmap and feature planning (not tracked)
+planning/

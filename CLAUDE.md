@@ -71,12 +71,12 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 - `/sync-status` - Rebuild STATUS.md from project state
 - `/sync-brain-dumps` - Pull brain dumps and personal context from Notion
 - `/checkpoint` - Create a git checkpoint commit with all changes
+- `/voice-calibrate` - Calibrate voice profile from writing samples
 
 ### Future Commands (Not Yet Implemented)
 - `/competitive-analysis` - Track competitor content and positioning
 - `/weekly-dashboard` - Track and visualize metrics
 - `/meeting-prep` - Generate meeting briefs
-- `/voice-calibrate` - Update voice profile from samples
 
 ---
 
@@ -91,6 +91,7 @@ PersonalOS uses **Task tool delegation** to specialized agents defined in `.clau
 | `intelligence-agent` | Web scraping + trend synthesis | sonnet | `/market-intelligence`, `/daily-brief` |
 | `pattern-agent` | Note analysis + theme extraction | sonnet | `/brain-dump-analysis` |
 | `content-agent` | Voice-matched content generation | sonnet | `/content-repurpose` |
+| `voice-calibration-agent` | Analyze samples for voice patterns | sonnet | `/voice-calibrate` |
 | `sync-agent` | Notion read/write operations | haiku | All commands (Notion sync) |
 | `sync-brain-dumps-agent` | Pull brain dumps from Notion | haiku | `/sync-brain-dumps` |
 
@@ -375,3 +376,4 @@ When adding new config files:
 | 1.3 | 2026-01-07 | Added personal-context.yaml, /add-story, Notion sync for personal context |
 | 1.4 | 2026-01-08 | Git setup: templates, .gitignore, setup.sh, MIT license, collaboration docs |
 | 2.0 | 2026-01-08 | Operative agents: Task tool delegation, .claude/agents/, JSON output schemas |
+| 2.1 | 2026-01-08 | Voice calibration: /voice-calibrate, sample infrastructure, JSON validation, retry logic, personal context guide |

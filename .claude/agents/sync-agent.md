@@ -210,3 +210,62 @@ Output:
 - Include operation description for logging
 - Return empty arrays (not null) for unused fields
 - Preserve all Notion page metadata in responses
+
+## Retry Behavior
+
+This agent is typically invoked by commands that may retry on failure. When invoked:
+
+### Built-in Retry Pattern
+
+If a Notion MCP call fails, apply this pattern before returning error:
+
+```yaml
+max_retries: 3
+backoff:
+  initial: 2000  # 2 seconds
+  multiplier: 2  # exponential: 2s, 4s, 8s
+  max: 8000
+```
+
+### Retry On
+- Connection errors (network unavailable)
+- Timeout errors
+- HTTP 5xx status codes
+- Rate limit errors (HTTP 429)
+
+### Don't Retry On
+- Authentication errors (invalid token) - return immediately
+- Invalid database_id - return immediately
+- Permission denied - return immediately
+- Invalid property names - return immediately with specific error
+
+### Retry Implementation
+
+```
+1. Attempt Notion MCP call
+2. If fails with retriable error:
+   a. Log error internally
+   b. Wait backoff duration
+   c. Retry (up to max_retries)
+3. If all retries fail:
+   a. Return { success: false, error: "detailed message", operation: "what was attempted" }
+4. If succeeds:
+   a. Return normal success response
+```
+
+### Partial Success Handling
+
+For batch operations (multiple writes):
+- Track which operations succeeded
+- Return partial results with both `created_ids` and errors
+- Don't fail entire operation if some items succeed
+
+Example partial response:
+```json
+{
+  "success": true,
+  "operation": "write 3 entries to market_intelligence (1 failed)",
+  "created_ids": ["page-1", "page-2"],
+  "error": "Entry 3 failed: property 'Topics' invalid value"
+}
+```

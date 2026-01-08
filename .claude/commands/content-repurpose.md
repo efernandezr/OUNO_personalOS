@@ -337,6 +337,113 @@ outputs/content/2026-01-08-ai-agents-marketing/
 └── newsletter-snippet.md
 ```
 
+## Retry Configuration
+
+### Content Agent Operations
+```yaml
+max_retries: 2
+backoff:
+  initial: 2000  # 2 seconds (creative generation takes time)
+  multiplier: 2
+  max: 8000
+retry_on:
+  - task_tool_error
+  - incomplete_response
+  - timeout
+dont_retry_on:
+  - invalid_source (source file not found)
+  - missing_config (voice profile not found)
+```
+
+### Notion Sync Operations
+```yaml
+max_retries: 3
+backoff:
+  initial: 2000
+  multiplier: 2
+  max: 8000
+retry_on:
+  - connection_error
+  - timeout
+  - status_5xx
+dont_retry_on:
+  - authentication_error
+  - invalid_database_id
+```
+
+## JSON Validation
+
+### Schema Reference
+```
+.claude/utils/schemas.json → agents.content-agent
+```
+
+### Required Fields
+- `source_analysis.main_thesis` (string)
+- `source_analysis.key_points` (array)
+- `generation_timestamp` (ISO string)
+- At least one platform array populated (linkedin, twitter, or newsletter)
+
+### Platform-Specific Validation
+**LinkedIn entries**:
+- `hook` (string, min 10 chars)
+- `body` (string, min 100 chars)
+- `character_count` (integer, 500-2000)
+- `hashtags` (array, 3-5 items)
+
+**Twitter entries**:
+- `tweets` (array, 4-12 items)
+- Each tweet ≤ 280 characters
+
+**Newsletter entries**:
+- `word_count` (integer, 400-1000)
+- `takeaways` (array, 3-5 items)
+
+### Validation on Failure
+1. Retry content-agent with specific feedback
+2. Max 2 validation retries
+3. If still failing, output partial content with warnings
+
+## Partial Results Handling
+
+### Scenario: Source File Not Found
+```markdown
+> ❌ **SOURCE NOT FOUND**
+> Could not read: {source_path}
+>
+> Please verify the path exists and try again.
+```
+
+### Scenario: Voice Profile Missing
+Proceed with default voice (warn user):
+```markdown
+> ⚠️ **VOICE PROFILE UNAVAILABLE**
+> Using default voice settings. Run `/voice-calibrate` to personalize.
+```
+
+### Scenario: Personal Context Empty
+Generate without stories:
+```markdown
+> ℹ️ **NO STORIES AVAILABLE**
+> Content generated without personal stories.
+> Run `/add-story` to add authenticity through personal context.
+```
+
+### Scenario: One Platform Fails
+Generate others successfully:
+```markdown
+> ⚠️ **PARTIAL GENERATION**
+> Twitter thread generation failed.
+> LinkedIn and Newsletter content generated successfully.
+```
+
+### Scenario: Notion Sync Fails
+Save locally, continue:
+```markdown
+**Notion Sync**: ❌ Content saved locally only.
+Manually add to content calendar or retry later.
+```
+
 ## Performance Target
 
 - All platforms: < 2 minutes
