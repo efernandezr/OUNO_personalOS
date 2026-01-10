@@ -1,6 +1,6 @@
 # PersonalOS Status
 
-> Last updated: 2026-01-10 (after /market-intelligence quick scan)
+> Last updated: 2026-01-10 (rebuilt by /sync-status)
 > Run `/sync-status` to rebuild this file from project state
 
 ## Quick State
@@ -15,22 +15,24 @@
 ## What's Working
 
 - [x] All config files populated (topics, sources, competitors, goals, notion-mapping, voice-profile, personal-context)
-- [x] Notion databases connected (7 databases configured - personal_context pending creation)
+- [x] Notion databases connected (7 databases configured)
 - [x] Daily brief command
 - [x] Market intelligence scanning
-- [x] **Operative agents** (5 agents in `.claude/agents/`)
+- [x] **Operative agents** (6 agents in `.claude/agents/`)
 - [x] **Task delegation** pattern for all commands
-- [x] Slash commands ready (5 MVP commands)
+- [x] Slash commands ready (6+ commands)
+- [x] Voice samples collected (2 samples in `inputs/samples/`)
 
 ## What's Pending
 
 - [x] Brain dumps - 1 synced from Notion (`brain-dumps/2026-01/`)
-- [ ] Voice calibration - profile at "placeholder" status, no samples
-- [x] Content outputs - first content package generated (`outputs/content/` has content)
+- [ ] Voice calibration - profile at "placeholder" status, samples available but not calibrated
+- [x] Content outputs - 3 packages generated (`outputs/content/`)
 - [ ] Competitive tracking - not started (`outputs/competitive/` empty)
-- [x] Intelligence archive - first scan complete (`outputs/intelligence/` has content)
+- [x] Intelligence archive - 3 scans complete (`outputs/intelligence/`)
 - [ ] Goals baseline - all metrics at 0 in `config/goals.yaml`
 - [x] Personal context - 1 story seeded (Crossing the Chasm)
+- [x] Analysis output - 1 brain analysis complete (`outputs/analysis/`)
 
 ## Recent Activity Log
 
@@ -53,10 +55,10 @@
 
 ## Next Suggested Actions
 
-1. **Create MCP Protocol content** - First-mover opportunity from today's intelligence (breaking news)
-2. Review and publish LinkedIn posts from `outputs/content/`
-3. Run `/content-repurpose` on today's intelligence brief for quick content
-4. Add voice samples to `inputs/samples/` for calibration
+1. **Run `/voice-calibrate`** - Voice samples available (2), profile needs calibration
+2. **Set goals baseline** - Update `config/goals.yaml` with current metrics
+3. Review and publish LinkedIn posts from `outputs/content/`
+4. Run `/market-intelligence` for fresh intel
 
 ## Config Summaries
 
@@ -68,9 +70,9 @@
 | **sources.yaml** | 17 sources (4 blogs, 5 newsletters, 4 news, 2 industry, 2 research) |
 | **competitors.yaml** | 4 competitors (2 tier-1, 2 tier-2) + 1 placeholder |
 | **goals.yaml** | All metrics at 0 (needs baseline) |
-| **voice-profile.yaml** | Status: placeholder (awaiting calibration) |
+| **voice-profile.yaml** | Status: placeholder (samples ready, needs calibration) |
 | **personal-context.yaml** | 1 story, 1 influence, 2 career phases |
-| **notion-mapping.yaml** | 8 databases configured (all active) |
+| **notion-mapping.yaml** | 7 databases configured (all active) |
 
 ## Operative Agents
 
@@ -79,6 +81,7 @@
 | `intelligence-agent` | `.claude/agents/intelligence-agent.md` | sonnet | Ready |
 | `pattern-agent` | `.claude/agents/pattern-agent.md` | sonnet | Ready |
 | `content-agent` | `.claude/agents/content-agent.md` | sonnet | Ready |
+| `voice-calibration-agent` | `.claude/agents/voice-calibration-agent.md` | sonnet | Ready |
 | `sync-agent` | `.claude/agents/sync-agent.md` | haiku | Ready |
 | `sync-brain-dumps-agent` | `.claude/agents/sync-brain-dumps-agent.md` | haiku | Ready |
 
@@ -94,3 +97,6 @@
 | `/add-story` | Ready | - | Add personal stories and experiences |
 | `/sync-status` | Ready | - | Rebuild this STATUS.md file |
 | `/sync-brain-dumps` | Ready | sync-brain-dumps, sync | Pull brain dumps from Notion |
+| `/voice-calibrate` | Ready | voice-calibration | Calibrate voice from samples |
+| `/checkpoint` | Ready | - | Create git checkpoint commit |
+| `/create-spec` | Ready | - | Create feature spec from planning |
