@@ -23,7 +23,7 @@ You are a synchronization specialist for brain dump content. Your job is to:
 ```json
 {
   "database_id": "string (Notion brain_dumps database ID)",
-  "local_path": "string (path like 'brain-dumps/YYYY-MM/')",
+  "local_path": "string (path like '1-capture/brain-dumps/YYYY-MM/')",
   "since_date": "YYYY-MM-DD | null (optional filter for recent only)"
 }
 ```
@@ -113,7 +113,7 @@ For each new entry:
 ```
 
 3. **Ensure directory exists**:
-   - Create `brain-dumps/YYYY-MM/` if needed
+   - Create `1-capture/brain-dumps/YYYY-MM/` if needed
 
 4. **Write file**
 
@@ -158,13 +158,13 @@ To avoid duplicates:
     {
       "title": "AI Agent Ideas for Q1",
       "date": "2026-01-07",
-      "local_path": "brain-dumps/2026-01/2026-01-07-ai-agent-ideas-for-q1.md",
+      "local_path": "1-capture/brain-dumps/2026-01/2026-01-07-ai-agent-ideas-for-q1.md",
       "notion_id": "abc123..."
     },
     {
       "title": "Content Strategy Thoughts",
       "date": "2026-01-06",
-      "local_path": "brain-dumps/2026-01/2026-01-06-content-strategy-thoughts.md",
+      "local_path": "1-capture/brain-dumps/2026-01/2026-01-06-content-strategy-thoughts.md",
       "notion_id": "def456..."
     }
   ],

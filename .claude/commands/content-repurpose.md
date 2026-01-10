@@ -162,14 +162,14 @@ The content-agent returns:
 
 ### Step 7: Write Output Files (Orchestrator)
 
-Create output folder: `outputs/content/{YYYY-MM-DD}-{slug}/`
+Create output folder: `3-content/{YYYY-MM-DD}-{slug}/`
 
 Generate slug from source title (lowercase, hyphens, max 50 chars)
 
 Write files:
 
 ```
-outputs/content/{date}-{slug}/
+3-content/{date}-{slug}/
 ├── summary.md          # Overview of all generated content
 ├── linkedin-v1.md      # First LinkedIn variation
 ├── linkedin-v2.md      # Second LinkedIn variation (if variations > 1)
@@ -299,7 +299,7 @@ Review each file and publish when ready.
 
 ### Step 8: Write Agent Log (Orchestrator)
 
-Write to: `outputs/logs/{YYYY-MM-DD}-content-agent.json`
+Write to: `system/logs/{YYYY-MM-DD}-content-agent.json`
 Include: input, output, timestamp
 
 ### Step 9: Sync to Notion Content Calendar (sync-agent)
@@ -376,7 +376,7 @@ Before output, the agent verifies:
 ## Example Output Location
 
 ```
-outputs/content/2026-01-08-ai-agents-marketing/
+3-content/2026-01-08-ai-agents-marketing/
 ├── summary.md
 ├── linkedin-v1.md
 ├── linkedin-v2.md

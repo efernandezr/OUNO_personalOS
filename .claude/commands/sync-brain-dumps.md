@@ -46,7 +46,7 @@ Read config file:
 ### Step 2: Prepare Local Path (Orchestrator)
 
 1. Get current year-month: `YYYY-MM`
-2. Construct path: `brain-dumps/YYYY-MM/`
+2. Construct path: `1-capture/brain-dumps/YYYY-MM/`
 3. Create directory if it doesn't exist
 
 ### Step 3: Invoke Sync Brain Dumps Agent (Task Tool)
@@ -68,7 +68,7 @@ Task tool call:
       ```json
       {
         "database_id": "{from notion-mapping.yaml - brain_dumps}",
-        "local_path": "brain-dumps/{YYYY-MM}/",
+        "local_path": "1-capture/brain-dumps/{YYYY-MM}/",
         "since_date": {from --since parameter or null}
       }
       ```
@@ -172,7 +172,7 @@ Finally, mark entries as synced in Notion.
 ## Output Locations
 
 ### Brain Dumps
-Files saved to: `brain-dumps/YYYY-MM/`
+Files saved to: `1-capture/brain-dumps/YYYY-MM/`
 
 Format: `YYYY-MM-DD-{slug}.md`
 
@@ -213,8 +213,8 @@ Querying Notion "POS: Brain Dumps" database...
 Found 3 unprocessed brain dumps.
 
 Syncing:
-  [1/3] "AI Agent Ideas" → brain-dumps/2026-01/2026-01-08-ai-agent-ideas.md ✓
-  [2/3] "Content Strategy" → brain-dumps/2026-01/2026-01-07-content-strategy.md ✓
+  [1/3] "AI Agent Ideas" → 1-capture/brain-dumps/2026-01/2026-01-08-ai-agent-ideas.md ✓
+  [2/3] "Content Strategy" → 1-capture/brain-dumps/2026-01/2026-01-07-content-strategy.md ✓
   [3/3] "dMAX Notes" → Skipped (already exists)
 
 ## Summary

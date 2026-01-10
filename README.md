@@ -118,7 +118,7 @@ Scan configured sources for AI marketing insights, trends, and developments. Inc
 /market-intelligence --force-fresh
 ```
 
-**Output:** `outputs/intelligence/{date}-market-brief.md`
+**Output:** `2-research/market-briefs/{date}-market-brief.md`
 
 **Notion Sync:** Creates entries in "POS: Market Intelligence" database
 
@@ -147,7 +147,7 @@ Generate a personalized morning briefing combining market intelligence with prio
 /daily-brief --no-real-time
 ```
 
-**Output:** `outputs/daily/{date}-brief.md`
+**Output:** `2-research/daily-briefs/{date}-brief.md`
 
 **Notion Sync:** Creates entry in "POS: Daily Briefs" database
 
@@ -176,10 +176,10 @@ Analyze accumulated notes and ideas to identify patterns and content opportuniti
 ```
 
 **Input:** Reads from **both** sources automatically:
-- Local files: `brain-dumps/` folder
+- Local files: `1-capture/brain-dumps/` folder
 - Notion: "POS: Brain Dumps" database
 
-**Output:** `outputs/analysis/{date}-brain-analysis.md`
+**Output:** `2-research/analysis/{date}-brain-analysis.md`
 
 ---
 
@@ -203,7 +203,7 @@ Pull brain dumps from Notion to local storage. Useful for backing up mobile capt
 
 **Input:** Notion "POS: Brain Dumps" database
 
-**Output:** Files saved to `brain-dumps/YYYY-MM/`
+**Output:** Files saved to `1-capture/brain-dumps/YYYY-MM/`
 
 **Note:** This is optional - `/brain-dump-analysis` reads from Notion directly. Use this for local backup.
 
@@ -215,7 +215,7 @@ Transform existing content into platform-optimized formats while preserving auth
 
 ```bash
 # Repurpose from local file
-/content-repurpose outputs/intelligence/2026-01-06-market-brief.md
+/content-repurpose 2-research/market-briefs/2026-01-06-market-brief.md
 
 # Repurpose from Notion page
 /content-repurpose https://notion.so/your-page-url
@@ -230,11 +230,10 @@ Transform existing content into platform-optimized formats while preserving auth
 /content-repurpose source.md --tone provocative
 ```
 
-**Output:** `outputs/content/{date}-{slug}/`
-- `linkedin-v1.md`, `linkedin-v2.md`
-- `twitter-thread.md`
-- `newsletter-snippet.md`
-- `summary.md`
+**Output:** Platform-specific folders in `3-content/`:
+- `3-content/linkedin/{date}-{slug}/post-v1.md`, `post-v2.md`
+- `3-content/twitter/{date}-{slug}/thread.md`
+- `3-content/newsletter/{date}-{slug}/snippet.md`
 
 **Notion Sync:** Creates draft entries in "POS: Content Calendar"
 
@@ -277,10 +276,10 @@ Analyze your writing samples to calibrate the voice profile for authentic conten
 /voice-calibrate --focus hooks,vocabulary
 ```
 
-**Input:** Samples from `inputs/samples/linkedin-posts/` and `inputs/samples/newsletter-samples/`
+**Input:** Samples from `1-capture/voice-samples/linkedin-posts/` and `1-capture/voice-samples/newsletter-samples/`
 
 **Output:**
-- Calibration report: `outputs/analysis/{date}-voice-calibration.md`
+- Calibration report: `2-research/analysis/{date}-voice-calibration.md`
 - Updated: `config/voice-profile.yaml` (with your approval)
 
 **Confidence Levels:**
@@ -335,7 +334,7 @@ Create a feature specification from a planning conversation.
 # - action-required.md
 ```
 
-**Output:** `specs/{feature-name}/`
+**Output:** `system/specs/{feature-name}/`
 
 **Note:** Specs are gitignored (personal to each user's improvements).
 
@@ -385,75 +384,65 @@ This ensures all claims are traceable and verifiable. See `.claude/docs/report-t
 
 ## Directory Structure
 
+PersonalOS uses a **numbered pipeline structure** for clear content flow:
+
 ```
 PersonalOS/
-├── CLAUDE.md                 # Main context file for Claude
-├── README.md                 # This file
+├── CLAUDE.md                    # Main context file for Claude
+├── README.md                    # This file
+├── STATUS.md                    # Current project state
 │
-├── config/                   # Configuration files
-│   ├── topics.yaml          # Topics to monitor
-│   ├── sources.yaml         # News sources and blogs
-│   ├── competitors.yaml     # Competitor profiles
-│   ├── voice-profile.yaml   # Your writing voice
-│   ├── personal-context.yaml # Personal stories & experiences
-│   ├── personal-context-guide.md # Story collection guide
-│   ├── goals.yaml           # Tracking goals
-│   ├── notion-mapping.yaml  # Notion database IDs
-│   └── research.yaml        # Perplexity settings (optional)
+├── 1-capture/                   # RAW INPUTS - where ideas enter
+│   ├── brain-dumps/             # Notes synced from Notion
+│   │   └── YYYY-MM/             # Organized by month
+│   ├── voice-samples/           # Writing samples for calibration
+│   │   ├── linkedin-posts/      # LinkedIn post samples (.md)
+│   │   ├── newsletter-samples/  # Newsletter samples (.md)
+│   │   └── .metadata.yaml       # Sample tracking metadata
+│   └── documents/               # PDFs and reference materials
 │
-├── .claude/commands/         # Slash command definitions
-│   ├── market-intelligence.md
-│   ├── daily-brief.md
-│   ├── brain-dump-analysis.md
-│   ├── content-repurpose.md
-│   ├── add-source.md
-│   ├── add-story.md
-│   ├── voice-calibrate.md
-│   ├── sync-status.md
-│   ├── sync-brain-dumps.md
-│   └── checkpoint.md
+├── 2-research/                  # INTELLIGENCE - processed insights
+│   ├── market-briefs/           # From /market-intelligence
+│   ├── daily-briefs/            # From /daily-brief
+│   ├── analysis/                # From /brain-dump-analysis
+│   ├── competitive/             # Competitor tracking (future)
+│   └── dashboards/              # Weekly dashboards (future)
 │
-├── .claude/agents/          # Operative agent definitions
-│   ├── intelligence-agent.md
-│   ├── pattern-agent.md
-│   ├── content-agent.md
-│   ├── voice-calibration-agent.md
-│   ├── sync-agent.md
-│   └── sync-brain-dumps-agent.md
+├── 3-content/                   # GENERATED CONTENT - by platform
+│   ├── linkedin/                # LinkedIn posts
+│   │   └── {date}-{slug}/       # post-v1.md, post-v2.md, summary.md
+│   ├── newsletter/              # Newsletter snippets
+│   │   └── {date}-{slug}/       # snippet.md
+│   └── twitter/                 # Twitter threads
+│       └── {date}-{slug}/       # thread.md
 │
-├── .claude/docs/            # Framework documentation
-│   └── report-template.md  # Unified output template
+├── 4-archive/                   # OLD CONTENT - rotated after 90 days
+│   └── YYYY-MM/                 # Organized by month
 │
-├── .claude/utils/           # Utility files
-│   └── schemas.json        # JSON validation schemas
+├── config/                      # Configuration files
+│   ├── topics.yaml              # Topics to monitor
+│   ├── sources.yaml             # News sources and blogs
+│   ├── competitors.yaml         # Competitor profiles
+│   ├── voice-profile.yaml       # Your writing voice
+│   ├── personal-context.yaml    # Personal stories & experiences
+│   ├── goals.yaml               # Tracking goals
+│   ├── notion-mapping.yaml      # Notion database IDs
+│   └── research.yaml            # Perplexity settings (optional)
 │
-├── brain-dumps/             # Your notes and ideas
-│   └── YYYY-MM/            # Organized by month
+├── system/                      # INTERNAL - system files
+│   ├── logs/                    # Agent execution logs
+│   ├── cache/                   # Perplexity cache, query results
+│   ├── specs/                   # Feature specifications
+│   │   └── {feature-name}/      # requirements.md, implementation-plan.md
+│   └── planning/                # Roadmap, planning docs
 │
-├── inputs/                  # Input materials
-│   ├── samples/            # Voice calibration samples
-│   │   ├── linkedin-posts/ # LinkedIn post samples (.md files)
-│   │   ├── newsletter-samples/ # Newsletter samples (.md files)
-│   │   └── .metadata.yaml  # Sample tracking metadata
-│   └── pdfs/               # PDFs for analysis
+├── .claude/                     # Claude Code internals
+│   ├── commands/                # Slash command definitions
+│   ├── agents/                  # Operative agent definitions
+│   ├── docs/                    # Framework documentation
+│   └── utils/                   # Utility files (schemas.json)
 │
-├── outputs/                 # Generated content
-│   ├── intelligence/       # Market intelligence briefs
-│   ├── competitive/        # Competitor analysis
-│   ├── content/            # Repurposed content
-│   ├── analysis/           # Brain dump analysis
-│   ├── dashboards/         # Weekly dashboards
-│   └── daily/              # Daily briefs
-│
-├── archive/                 # Archived outputs (90+ days)
-├── scripts/cron/           # Automation scripts
-├── logs/                   # Execution logs
-│
-└── specs/                   # Feature specifications (gitignored)
-    └── {feature-name}/     # One folder per feature
-        ├── requirements.md
-        ├── implementation-plan.md
-        └── action-required.md
+└── scripts/                     # Automation scripts
 ```
 
 ## Configuration
@@ -568,7 +557,7 @@ Agent outputs are validated against schemas defined in `.claude/utils/schemas.js
 
 ```bash
 # 1. Capture ideas throughout the day
-# (Add notes to Notion on mobile, or brain-dumps/ folder on desktop)
+# (Add notes to Notion on mobile, or 1-capture/brain-dumps/ folder on desktop)
 
 # 2. Optional: Sync Notion brain dumps to local storage
 /sync-brain-dumps
@@ -577,7 +566,7 @@ Agent outputs are validated against schemas defined in `.claude/utils/schemas.js
 /brain-dump-analysis --timeframe week
 
 # 4. Pick a topic and generate content
-/content-repurpose outputs/analysis/2026-01-06-brain-analysis.md --platforms linkedin
+/content-repurpose 2-research/analysis/2026-01-06-brain-analysis.md --platforms linkedin
 ```
 
 ### Weekly Intelligence Review
@@ -638,9 +627,9 @@ For best results, structure your brain dumps like this:
 
 ### Content not matching voice
 
-1. Add more samples to `inputs/samples/linkedin-posts/` and `inputs/samples/newsletter-samples/`
+1. Add more samples to `1-capture/voice-samples/linkedin-posts/` and `1-capture/voice-samples/newsletter-samples/`
 2. Run `/voice-calibrate` to analyze and calibrate
-3. Review the calibration report in `outputs/analysis/`
+3. Review the calibration report in `2-research/analysis/`
 4. If needed, manually adjust `config/voice-profile.yaml`
 
 ## Voice Calibration Setup
@@ -653,10 +642,10 @@ Add your best-performing content to the samples folders:
 
 **LinkedIn Posts:**
 ```bash
-# Create sample files in inputs/samples/linkedin-posts/
+# Create sample files in 1-capture/voice-samples/linkedin-posts/
 # Use this format:
 
-inputs/samples/linkedin-posts/post-001.md
+1-capture/voice-samples/linkedin-posts/post-001.md
 ```
 
 ```markdown
@@ -671,7 +660,7 @@ Your LinkedIn post content here...
 
 **Newsletter Samples:**
 ```bash
-inputs/samples/newsletter-samples/issue-001.md
+1-capture/voice-samples/newsletter-samples/issue-001.md
 ```
 
 ```markdown
@@ -712,7 +701,7 @@ The calibration will:
 - `/weekly-dashboard` - Automated weekly metrics review
 - `/meeting-prep` - Prepare for meetings with context
 
-> **Detailed tracking**: See `planning/ROADMAP.md` for full feature roadmap, ideas backlog, and progress tracking (gitignored, local only).
+> **Detailed tracking**: See `system/planning/ROADMAP.md` for full feature roadmap, ideas backlog, and progress tracking (gitignored, local only).
 
 ## Project Structure
 
@@ -723,15 +712,17 @@ PersonalOS/
 ├── Framework (tracked)
 │   ├── CLAUDE.md, README.md       # Documentation
 │   ├── .claude/commands/          # Slash commands
-│   ├── sub-agents/                # Agent definitions
+│   ├── .claude/agents/            # Agent definitions
 │   ├── scripts/                   # Automation scripts
 │   └── config/templates/          # Config templates
 │
 └── Personal Data (gitignored)
     ├── config/*.yaml              # Your actual configs
-    ├── outputs/                   # Generated content
-    ├── brain-dumps/               # Your notes
-    └── logs/                      # Execution logs
+    ├── 1-capture/                 # Your inputs (brain-dumps, samples)
+    ├── 2-research/                # Generated research
+    ├── 3-content/                 # Generated content
+    ├── 4-archive/                 # Old content
+    └── system/                    # Logs, cache, specs
 ```
 
 When you clone, run `./scripts/setup.sh` to create your personal config files from templates.
@@ -750,14 +741,14 @@ Enter planning mode and design your approach with Claude.
 /create-spec my-feature-name
 ```
 
-This generates three files in `specs/my-feature-name/`:
+This generates three files in `system/specs/my-feature-name/`:
 - **requirements.md** - What and why, acceptance criteria
 - **implementation-plan.md** - Phased tasks with checkboxes
 - **action-required.md** - Manual steps (API keys, accounts, etc.)
 
 ### 3. Implement
 
-Follow the task checklist in `implementation-plan.md`. Each task is designed to be implementable in a single session.
+Follow the task checklist in `system/specs/{feature}/implementation-plan.md`. Each task is designed to be implementable in a single session.
 
 ### 4. Share (Optional)
 

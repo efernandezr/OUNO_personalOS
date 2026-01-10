@@ -38,7 +38,7 @@ Orchestrator (this command)     →     Agents
 1. Parse parameters
 2. Load configs
 3. Query Notion brain dumps      →    sync-agent (query)
-4. Read local brain-dumps/
+4. Read local 1-capture/brain-dumps/
 5. Deduplicate & combine
 6. Construct pattern input
                                  →    7. pattern-agent (analysis)
@@ -86,7 +86,7 @@ Task tool call:
 
 ### Step 3: Read Local Brain Dumps (Orchestrator)
 
-1. List files in `brain-dumps/` matching timeframe
+1. List files in `1-capture/brain-dumps/` matching timeframe
 2. Parse each markdown file for title, date, content, tags
 3. Build local notes array
 
@@ -238,9 +238,9 @@ All notes analyzed in this report (internal references, not web URLs):
 
 ### Step 8: Write Output Files (Orchestrator)
 
-1. Create directory: `outputs/analysis/`
-2. Write to: `outputs/analysis/{YYYY-MM-DD}-brain-analysis.md`
-3. Write agent log: `outputs/logs/{YYYY-MM-DD}-pattern-agent.json`
+1. Create directory: `2-research/analysis/`
+2. Write to: `2-research/analysis/{YYYY-MM-DD}-brain-analysis.md`
+3. Write agent log: `system/logs/{YYYY-MM-DD}-pattern-agent.json`
 
 ### Step 9: Mark Notion Entries Processed (sync-agent)
 
@@ -283,7 +283,7 @@ Task tool call:
 ## Input Sources
 
 ### Local Files
-- Location: `brain-dumps/YYYY-MM/`
+- Location: `1-capture/brain-dumps/YYYY-MM/`
 - Format: Markdown files
 - Best for: Longer, structured notes from desktop
 
@@ -302,7 +302,7 @@ Task tool call:
 
 ## Example Output Location
 
-`outputs/analysis/2026-01-08-brain-analysis.md`
+`2-research/analysis/2026-01-08-brain-analysis.md`
 
 ## Retry Configuration
 
@@ -375,7 +375,7 @@ If validation fails:
 > No brain dumps found in Notion or local storage.
 >
 > **To capture ideas**:
-> - Add notes to `brain-dumps/YYYY-MM/` folder
+> - Add notes to `1-capture/brain-dumps/YYYY-MM/` folder
 > - Or create entries in Notion "POS: Brain Dumps" database
 > - Run `/sync-brain-dumps` to pull Notion content locally
 ```

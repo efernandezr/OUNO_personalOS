@@ -9,11 +9,19 @@ config/*.yaml
 !config/templates/
 
 # ===========================================
-# Generated Content & Outputs
+# Pipeline Folders (Personal Data)
 # ===========================================
-# All generated outputs stay local
+# All pipeline folders contain personal data and stay local
+1-capture/
+2-research/
+3-content/
+4-archive/
+system/
+
+# Legacy folder names (for backwards compatibility during transition)
 outputs/
 brain-dumps/
+inputs/
 logs/
 
 # ===========================================
@@ -70,12 +78,12 @@ Desktop.ini
 *.backup
 
 # ===========================================
-# Planning & Local Docs
+# Planning & Local Docs (Legacy - now in system/)
 # ===========================================
-# Personal roadmap and feature planning (not tracked)
+# Personal roadmap and feature planning (now in system/planning/)
 planning/
 
-# Feature specs (personal to each user)
+# Feature specs (now in system/specs/)
 specs/*/
 !specs/.gitkeep
 .mcp.json

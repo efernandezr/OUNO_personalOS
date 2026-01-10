@@ -19,7 +19,7 @@ git diff --stat
 
 **Safety Check**: Ensure no personal configs are accidentally staged:
 - `config/*.yaml` files should NOT appear (they're gitignored)
-- `outputs/`, `brain-dumps/`, `logs/` should NOT appear
+- `2-research/`, `1-capture/brain-dumps/`, `system/logs/` should NOT appear
 - `.claude/settings.local.json` should NOT appear
 
 If any of these appear, check `.gitignore` is working correctly.

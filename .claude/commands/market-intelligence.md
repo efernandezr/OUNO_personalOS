@@ -272,11 +272,11 @@ All sources referenced in this report:
 
 ### Step 6: Write Output Files (Orchestrator)
 
-1. Create output directory if needed: `outputs/intelligence/`
-2. Write markdown to: `outputs/intelligence/{YYYY-MM-DD}-{HHMM}-market-brief.md`
+1. Create output directory if needed: `2-research/market-briefs/`
+2. Write markdown to: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief.md`
    - Include timestamp (24h format) to preserve multiple scans per day
    - Example: `2026-01-10-1430-market-brief.md`
-3. Write agent log to: `outputs/logs/{YYYY-MM-DD}-{HHMM}-intelligence-agent.json`
+3. Write agent log to: `system/logs/{YYYY-MM-DD}-{HHMM}-intelligence-agent.json`
    - Include: input, output, timestamp, duration
 
 ### Step 6.5: Process Discovered Sources (Orchestrator)
@@ -341,11 +341,11 @@ Task tool call:
 ### Step 8: Update STATUS.md (Orchestrator)
 
 1. Set **Last Command** to `/market-intelligence`
-2. Set **Last Output** to `outputs/intelligence/{date}-market-brief.md`
+2. Set **Last Output** to `2-research/market-briefs/{date}-market-brief.md`
 3. Add entry to **Activity Log** table:
    - Date: Current date
    - Command: /market-intelligence
-   - Output: outputs/intelligence/{date}-market-brief.md
+   - Output: 2-research/market-briefs/{date}-market-brief.md
    - Notes: Summary (e.g., "Standard scan, {sources_scanned} sources, {insights.length} insights")
 
 ## Agent Reference
@@ -477,7 +477,7 @@ If sync-agent fails after retries:
 **Notion Sync**: ❌ Failed after 3 retries. Saved locally only.
 Run `/sync-status` later to retry sync.
 ```
-3. Log sync failure to `outputs/logs/{date}-sync-errors.json`
+3. Log sync failure to `system/logs/{date}-sync-errors.json`
 
 ### Scenario: More than 50% Sources Failed
 
@@ -493,7 +493,7 @@ Add prominent warning:
 
 ### Error Log Format
 
-Write errors to `outputs/logs/{YYYY-MM-DD}-market-intelligence-errors.json`:
+Write errors to `system/logs/{YYYY-MM-DD}-market-intelligence-errors.json`:
 ```json
 {
   "command": "/market-intelligence",
@@ -513,7 +513,7 @@ Write errors to `outputs/logs/{YYYY-MM-DD}-market-intelligence-errors.json`:
 
 ## Example Output Location
 
-`outputs/intelligence/2026-01-08-1430-market-brief.md`
+`2-research/market-briefs/2026-01-08-1430-market-brief.md`
 
 ## Performance Target
 

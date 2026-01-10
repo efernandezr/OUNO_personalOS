@@ -242,10 +242,10 @@ All sources referenced in this brief:
 
 ### Step 6: Write Output File (Orchestrator)
 
-1. Create directory if needed: `outputs/daily/`
-2. Write to: `outputs/daily/{YYYY-MM-DD}-{HHMM}-brief.md`
+1. Create directory if needed: `2-research/daily-briefs/`
+2. Write to: `2-research/daily-briefs/{YYYY-MM-DD}-{HHMM}-brief.md`
    - Include timestamp to preserve multiple briefs per day
-3. Write agent log to: `outputs/logs/{YYYY-MM-DD}-{HHMM}-daily-brief-agent.json`
+3. Write agent log to: `system/logs/{YYYY-MM-DD}-{HHMM}-daily-brief-agent.json`
 
 ### Step 7: Sync to Notion (Orchestrator → sync-agent)
 
@@ -281,7 +281,7 @@ Task tool call:
 ### Step 8: Update STATUS.md (Orchestrator)
 
 1. Set **Last Command** to `/daily-brief`
-2. Set **Last Output** to `outputs/daily/{date}-brief.md`
+2. Set **Last Output** to `2-research/daily-briefs/{date}-brief.md`
 3. Add entry to **Activity Log**
 
 ## Agent Reference
@@ -299,7 +299,7 @@ Task tool call:
 
 ## Example Output Location
 
-`outputs/daily/2026-01-08-brief.md`
+`2-research/daily-briefs/2026-01-08-brief.md`
 
 ## Retry Configuration
 

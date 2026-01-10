@@ -156,23 +156,41 @@ The `sub-agents/` folder contains deprecated documentation. See `.claude/agents/
 
 ## File Conventions
 
-### Input Locations
-- Brain dumps: `brain-dumps/YYYY-MM/`
-- Voice samples: `inputs/samples/`
-- PDFs: `inputs/pdfs/`
+### Pipeline Structure
 
-### Output Locations
-- Intelligence: `outputs/intelligence/`
-- Competitive: `outputs/competitive/`
-- Content: `outputs/content/{date}-{slug}/`
-- Analysis: `outputs/analysis/`
-- Dashboards: `outputs/dashboards/`
-- Daily: `outputs/daily/`
+PersonalOS uses a numbered folder structure reflecting the content pipeline:
+
+```
+1-capture/     → Raw inputs (brain dumps, voice samples, documents)
+2-research/    → Intelligence & analysis (market briefs, daily briefs)
+3-content/     → Generated content by platform (linkedin, newsletter, twitter)
+4-archive/     → Old content (rotated after 90 days)
+system/        → Internal files (logs, cache, specs, planning)
+```
+
+### Input Locations (1-capture/)
+- Brain dumps: `1-capture/brain-dumps/YYYY-MM/`
+- Voice samples: `1-capture/voice-samples/`
+- Documents: `1-capture/documents/`
+
+### Output Locations (2-research/, 3-content/)
+- Market briefs: `2-research/market-briefs/`
+- Daily briefs: `2-research/daily-briefs/`
+- Analysis: `2-research/analysis/`
+- Competitive: `2-research/competitive/`
+- Dashboards: `2-research/dashboards/`
+- Content: `3-content/{platform}/{date}-{slug}/`
+
+### System Locations (system/)
+- Logs: `system/logs/`
+- Cache: `system/cache/`
+- Specs: `system/specs/`
+- Planning: `system/planning/`
 
 ### Naming Conventions
-- Intelligence/Briefs: `YYYY-MM-DD-HHMM-{descriptor}.md` (preserves multiple per day)
-- Analysis/Content: `YYYY-MM-DD-{descriptor}.md` (typically one per day)
-- Folders: `YYYY-MM-DD-{slug}/`
+- Market/Daily briefs: `YYYY-MM-DD-HHMM-{descriptor}.md` (preserves multiple per day)
+- Analysis: `YYYY-MM-DD-{descriptor}.md` (typically one per day)
+- Content folders: `YYYY-MM-DD-{slug}/`
 - Logs: `YYYY-MM-DD-HHMM-{command}.json`
 
 ---

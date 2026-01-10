@@ -21,13 +21,17 @@ No parameters required. The command scans the project and rebuilds STATUS.md.
 Check each output folder for recent files:
 
 ```
-outputs/
-├── daily/           → List files, note most recent
-├── intelligence/    → Check if empty or has content
+2-research/
+├── market-briefs/   → List files, note most recent
+├── daily-briefs/    → Check if empty or has content
 ├── analysis/        → Check if empty or has content
-├── content/         → Check if empty or has content
 ├── competitive/     → Check if empty or has content
 └── dashboards/      → Check if empty or has content
+
+3-content/
+├── linkedin/        → Check if empty or has content
+├── newsletter/      → Check if empty or has content
+└── twitter/         → Check if empty or has content
 ```
 
 ### 2. Read Config Summaries
@@ -46,14 +50,14 @@ For each config file, extract key counts:
 ### 3. Check Input Directories
 
 ```
-brain-dumps/         → Check if any .md files exist
-inputs/samples/      → Check if voice samples exist
-inputs/pdfs/         → Check if PDFs exist
+1-capture/brain-dumps/         → Check if any .md files exist
+1-capture/voice-samples/      → Check if voice samples exist
+1-capture/documents/         → Check if PDFs exist
 ```
 
 ### 4. Determine Last Command
 
-- Find most recent file in outputs/
+- Find most recent file in 2-research/
 - Extract date and infer command from folder location
 
 ### 5. Build Activity Log
@@ -105,11 +109,11 @@ Write the rebuilt file with:
 ## Logic for "What's Pending"
 
 Mark as pending if:
-- `brain-dumps/` is empty → "Brain dumps - no notes captured"
+- `1-capture/brain-dumps/` is empty → "Brain dumps - no notes captured"
 - `voice-profile.yaml` status is "placeholder" → "Voice calibration pending"
-- `outputs/content/` is empty → "Content outputs - none generated"
-- `outputs/competitive/` is empty → "Competitive tracking - not started"
-- `outputs/intelligence/` is empty → "Intelligence archive - no deep scans"
+- `3-content/` is empty → "Content outputs - none generated"
+- `2-research/competitive/` is empty → "Competitive tracking - not started"
+- `2-research/market-briefs/` is empty → "Intelligence archive - no deep scans"
 - `goals.yaml` all metrics are 0 → "Goals baseline - needs setting"
 
 ## Logic for "Next Suggested Actions"

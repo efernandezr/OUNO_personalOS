@@ -60,10 +60,10 @@ Orchestrator (this command)     →     Agents
 ### Step 1: Scan Sample Directories (Orchestrator)
 
 Scan these directories for samples:
-- `inputs/samples/linkedin-posts/*.md`
-- `inputs/samples/newsletter-samples/*.md`
+- `1-capture/voice-samples/linkedin-posts/*.md`
+- `1-capture/voice-samples/newsletter-samples/*.md`
 
-Read `inputs/samples/.metadata.yaml` for engagement data if available.
+Read `1-capture/voice-samples/.metadata.yaml` for engagement data if available.
 
 ### Step 2: Load Sample Content (Orchestrator)
 
@@ -116,7 +116,7 @@ If samples < min_samples:
 Found {n} samples, but minimum is {min_samples}.
 
 **To proceed**:
-- Add more samples to `inputs/samples/`
+- Add more samples to `1-capture/voice-samples/`
 - Or run with `--min-samples {n}` to proceed anyway
 
 **Confidence levels**:
@@ -255,7 +255,7 @@ sample_count: {n}
 
 ### Step 9: Generate Calibration Report (Orchestrator)
 
-Write to: `outputs/analysis/{YYYY-MM-DD}-voice-calibration.md`
+Write to: `2-research/analysis/{YYYY-MM-DD}-voice-calibration.md`
 
 ```markdown
 # Voice Calibration Report
@@ -348,13 +348,13 @@ Write to: `outputs/analysis/{YYYY-MM-DD}-voice-calibration.md`
 
 ### Step 10: Write Agent Log (Orchestrator)
 
-Write to: `outputs/logs/{YYYY-MM-DD}-voice-calibration-agent.json`
+Write to: `system/logs/{YYYY-MM-DD}-voice-calibration-agent.json`
 
 Include: input summary, output, timestamp, changes applied
 
 ### Step 11: Update Metadata (Orchestrator)
 
-Update `inputs/samples/.metadata.yaml`:
+Update `1-capture/voice-samples/.metadata.yaml`:
 
 ```yaml
 last_calibration: "{ISO date}"
@@ -406,7 +406,7 @@ calibration_history:
 ## Example Output Location
 
 ```
-outputs/analysis/2026-01-08-voice-calibration.md
+2-research/analysis/2026-01-08-voice-calibration.md
 ```
 
 ## Performance Target
@@ -422,12 +422,12 @@ outputs/analysis/2026-01-08-voice-calibration.md
 ## No Samples Found
 
 The sample directories are empty:
-- `inputs/samples/linkedin-posts/`
-- `inputs/samples/newsletter-samples/`
+- `1-capture/voice-samples/linkedin-posts/`
+- `1-capture/voice-samples/newsletter-samples/`
 
 **To add samples**:
-1. Copy LinkedIn posts to `inputs/samples/linkedin-posts/`
-2. Copy newsletter content to `inputs/samples/newsletter-samples/`
+1. Copy LinkedIn posts to `1-capture/voice-samples/linkedin-posts/`
+2. Copy newsletter content to `1-capture/voice-samples/newsletter-samples/`
 3. Run `/voice-calibrate` again
 
 See README.md files in each directory for formatting instructions.
