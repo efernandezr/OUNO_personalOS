@@ -72,11 +72,33 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 - `/sync-brain-dumps` - Pull brain dumps and personal context from Notion
 - `/checkpoint` - Create a git checkpoint commit with all changes
 - `/voice-calibrate` - Calibrate voice profile from writing samples
+- `/create-spec` - Create feature spec from planning conversation
 
 ### Future Commands (Not Yet Implemented)
 - `/competitive-analysis` - Track competitor content and positioning
 - `/weekly-dashboard` - Track and visualize metrics
 - `/meeting-prep` - Generate meeting briefs
+
+---
+
+## Spec Creation Workflow
+
+When planning improvements to PersonalOS, use this workflow:
+
+1. Enter planning mode to design the feature/improvement
+2. Run `/create-spec {feature-name}` to capture the conversation
+3. Review the generated specs in `specs/{feature-name}/`
+4. Implement using the task checklist
+
+### Spec Structure
+
+| File | Purpose |
+|------|---------|
+| `requirements.md` | What the feature does and why, acceptance criteria |
+| `implementation-plan.md` | Phased tasks with checkboxes, technical details |
+| `action-required.md` | Manual steps requiring human action |
+
+Specs are gitignored (personal to each user's improvements).
 
 ---
 
@@ -377,3 +399,4 @@ When adding new config files:
 | 1.4 | 2026-01-08 | Git setup: templates, .gitignore, setup.sh, MIT license, collaboration docs |
 | 2.0 | 2026-01-08 | Operative agents: Task tool delegation, .claude/agents/, JSON output schemas |
 | 2.1 | 2026-01-08 | Voice calibration: /voice-calibrate, sample infrastructure, JSON validation, retry logic, personal context guide |
+| 2.2 | 2026-01-10 | Spec creation: /create-spec command, specs/ folder, improvement workflow |

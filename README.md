@@ -277,6 +277,26 @@ Add personal stories and experiences to your context for authentic content gener
 
 **Notion Sync:** Creates entry in "POS: Personal Context" database
 
+---
+
+### `/create-spec`
+
+Create a feature specification from a planning conversation.
+
+```bash
+# After a planning conversation
+/create-spec my-new-feature
+
+# Creates specs/my-new-feature/ with:
+# - requirements.md
+# - implementation-plan.md
+# - action-required.md
+```
+
+**Output:** `specs/{feature-name}/`
+
+**Note:** Specs are gitignored (personal to each user's improvements).
+
 ## Directory Structure
 
 ```
@@ -337,7 +357,13 @@ PersonalOS/
 │
 ├── archive/                 # Archived outputs (90+ days)
 ├── scripts/cron/           # Automation scripts
-└── logs/                   # Execution logs
+├── logs/                   # Execution logs
+│
+└── specs/                   # Feature specifications (gitignored)
+    └── {feature-name}/     # One folder per feature
+        ├── requirements.md
+        ├── implementation-plan.md
+        └── action-required.md
 ```
 
 ## Configuration
@@ -612,6 +638,33 @@ PersonalOS/
 ```
 
 When you clone, run `./scripts/setup.sh` to create your personal config files from templates.
+
+## Improving PersonalOS
+
+Want to add features or improvements to PersonalOS? Use the spec workflow:
+
+### 1. Plan the Feature
+
+Enter planning mode and design your approach with Claude.
+
+### 2. Create a Spec
+
+```bash
+/create-spec my-feature-name
+```
+
+This generates three files in `specs/my-feature-name/`:
+- **requirements.md** - What and why, acceptance criteria
+- **implementation-plan.md** - Phased tasks with checkboxes
+- **action-required.md** - Manual steps (API keys, accounts, etc.)
+
+### 3. Implement
+
+Follow the task checklist in `implementation-plan.md`. Each task is designed to be implementable in a single session.
+
+### 4. Share (Optional)
+
+If your improvement is framework-level (commands, agents, docs), submit a PR!
 
 ## Contributing
 
