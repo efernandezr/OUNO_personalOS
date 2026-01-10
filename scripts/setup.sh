@@ -74,6 +74,43 @@ else
 fi
 
 echo ""
+echo -e "${YELLOW}Step 4: Optional Features...${NC}"
+echo ""
+echo -e "┌─────────────────────────────────────────────────────────────┐"
+echo -e "│ ${BLUE}Optional: Real-Time Intelligence (Perplexity)${NC}               │"
+echo -e "└─────────────────────────────────────────────────────────────┘"
+echo ""
+echo "PersonalOS can use Perplexity API for:"
+echo -e "  ${GREEN}•${NC} Breaking news detection (last 48h)"
+echo -e "  ${GREEN}•${NC} Trend discovery beyond configured sources"
+echo -e "  ${GREEN}•${NC} Automatic source discovery"
+echo ""
+echo "This requires a Perplexity API key (free tier available)."
+echo -e "You can enable this later by running: ${BLUE}./scripts/enable-perplexity.sh${NC}"
+echo ""
+
+read -p "Enable real-time intelligence now? [y/N]: " enable_perplexity
+
+if [[ "$enable_perplexity" =~ ^[Yy]$ ]]; then
+    ./scripts/enable-perplexity.sh
+else
+    echo ""
+    echo -e "${YELLOW}  ℹ️  Skipped. Run ./scripts/enable-perplexity.sh anytime to enable.${NC}"
+
+    # Still create research.yaml with perplexity disabled if template exists
+    if [[ ! -f "config/research.yaml" ]] && [[ -f "config/templates/research.template.yaml" ]]; then
+        cp "config/templates/research.template.yaml" "config/research.yaml"
+        # Disable perplexity by default
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' 's/enabled: true/enabled: false/' "config/research.yaml" 2>/dev/null || true
+        else
+            sed -i 's/enabled: true/enabled: false/' "config/research.yaml" 2>/dev/null || true
+        fi
+        echo -e "${GREEN}  ✓ Created config/research.yaml (Perplexity disabled)${NC}"
+    fi
+fi
+
+echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Setup complete!${NC}"
 echo ""

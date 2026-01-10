@@ -1,8 +1,11 @@
 # PersonalOS Sources Configuration
 # Copy to config/sources.yaml and customize with your sources
 # Use /add-source command to add new sources interactively
+#
+# Sources can be added manually OR discovered automatically by Perplexity.
+# Auto-discovered sources have 'added_by: perplexity' field.
 
-version: "1.0"
+version: "2.0"
 last_updated: "YYYY-MM-DD"  # Update when modified
 
 sources:
@@ -15,13 +18,21 @@ sources:
       topics:
         - "Your Topic 1"
         - "Your Topic 2"
+      # Optional fields for manually added sources:
+      # added_by: manual
+      # added_date: "2026-01-10"
+
+    # Example of Perplexity-discovered source (auto-added):
+    # - name: "AI Weekly"
+    #   url: "https://aiweekly.co"
+    #   type: blog
+    #   priority: medium        # New sources start at medium
+    #   topics: []              # Topics detected from content
+    #   added_by: perplexity    # Indicates auto-discovery
+    #   added_date: "2026-01-10"
+    #   discovery_context: "Found via trend query on AI agents"
 
     # Add more blogs...
-    # - name: "Another Blog"
-    #   url: "https://..."
-    #   type: blog
-    #   priority: medium
-    #   topics: [...]
 
   # Newsletters - key thought leadership sources
   newsletters:
@@ -69,3 +80,24 @@ settings:
   max_sources_per_run: 20      # Limit for performance
   retry_on_failure: true
   fallback_to_web_search: true
+
+# Auto-discovery settings (for Perplexity integration)
+# These limits prevent source list from growing too large
+auto_discovery:
+  enabled: true               # Allow auto-adding discovered sources
+  require_review: false       # If true, add to pending list instead of sources
+
+  # Category limits - when full, new sources are reported but not added
+  category_limits:
+    blog: 5
+    newsletter: 5
+    news: 4
+    industry: 3
+    research: 3
+
+  # Total maximum sources across all categories
+  total_max: 20
+
+  # Sources pending review (if require_review: true)
+  # These are discovered but not yet approved for scanning
+  pending: []

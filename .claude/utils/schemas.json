@@ -2,7 +2,30 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://personalos.dev/schemas/agents",
   "description": "JSON schemas for validating PersonalOS agent outputs",
-  "version": "1.0",
+  "version": "2.0",
+
+  "shared": {
+    "source_citation": {
+      "type": "object",
+      "required": ["url", "name"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "name": { "type": "string", "minLength": 1 },
+        "accessed_at": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["firecrawl", "perplexity", "web", "internal"] }
+      }
+    },
+    "report_metadata": {
+      "type": "object",
+      "required": ["report_type", "generated_at", "status"],
+      "properties": {
+        "report_type": { "type": "string", "enum": ["market-intelligence", "daily-brief", "brain-analysis", "content-package"] },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["success", "partial", "degraded"] },
+        "sources_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
 
   "definitions": {
     "priority": {
@@ -24,17 +47,58 @@
       "type": "object",
       "required": ["insights", "trends", "content_opportunities", "sources_scanned", "scan_timestamp", "scan_metadata"],
       "properties": {
+        "real_time_intelligence": {
+          "type": "object",
+          "properties": {
+            "breaking_news": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["title", "summary", "sources", "relevance"],
+                "properties": {
+                  "title": { "type": "string", "minLength": 1 },
+                  "summary": { "type": "string", "minLength": 10 },
+                  "sources": {
+                    "type": "array",
+                    "items": { "$ref": "#/shared/source_citation" },
+                    "minItems": 1
+                  },
+                  "discovered_at": { "$ref": "#/definitions/isoTimestamp" },
+                  "relevance": { "$ref": "#/definitions/priority" }
+                }
+              }
+            },
+            "trend_signals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["trend", "evidence_count", "sources", "trajectory"],
+                "properties": {
+                  "trend": { "type": "string" },
+                  "evidence_count": { "type": "integer", "minimum": 1 },
+                  "sources": {
+                    "type": "array",
+                    "items": { "$ref": "#/shared/source_citation" },
+                    "minItems": 1
+                  },
+                  "trajectory": { "type": "string", "enum": ["rising", "emerging", "stable"] }
+                }
+              }
+            },
+            "status": { "type": "string", "enum": ["success", "skipped", "error", "budget_exceeded"] },
+            "queries_used": { "type": "integer", "minimum": 0 }
+          }
+        },
         "insights": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["title", "priority", "topics", "source_url", "source_name", "summary", "content_potential", "suggested_angle"],
+            "required": ["title", "priority", "topics", "source", "summary", "content_potential", "suggested_angle"],
             "properties": {
               "title": { "type": "string", "minLength": 1 },
               "priority": { "$ref": "#/definitions/priority" },
               "topics": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-              "source_url": { "type": "string", "format": "uri" },
-              "source_name": { "type": "string" },
+              "source": { "$ref": "#/shared/source_citation" },
               "summary": { "type": "string", "minLength": 10 },
               "content_potential": { "$ref": "#/definitions/priority" },
               "suggested_angle": { "type": "string", "minLength": 5 }
@@ -45,10 +109,14 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "evidence", "trajectory", "content_opportunity"],
+            "required": ["name", "evidence_sources", "trajectory", "content_opportunity"],
             "properties": {
               "name": { "type": "string" },
-              "evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "evidence_sources": {
+                "type": "array",
+                "items": { "$ref": "#/shared/source_citation" },
+                "minItems": 2
+              },
               "trajectory": { "type": "string", "enum": ["rising", "stable", "declining"] },
               "content_opportunity": { "type": "string" }
             }
@@ -68,8 +136,32 @@
             }
           }
         },
+        "sources_discovered": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url", "name", "category", "action", "reason"],
+            "properties": {
+              "url": { "type": "string", "format": "uri" },
+              "name": { "type": "string" },
+              "category": { "type": "string" },
+              "action": { "type": "string", "enum": ["add", "review", "skip"] },
+              "reason": { "type": "string" }
+            }
+          }
+        },
         "sources_scanned": { "type": "integer", "minimum": 0 },
-        "sources_failed": { "type": "array", "items": { "type": "string" } },
+        "sources_failed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url", "error"],
+            "properties": {
+              "url": { "type": "string" },
+              "error": { "type": "string" }
+            }
+          }
+        },
         "scan_timestamp": { "$ref": "#/definitions/isoTimestamp" },
         "scan_metadata": {
           "type": "object",
@@ -87,16 +179,31 @@
 
     "pattern-agent": {
       "type": "object",
-      "required": ["themes", "evolution", "content_queue", "notes_analyzed", "unique_themes_found", "analysis_timestamp"],
+      "required": ["themes", "evolution", "content_queue", "source_notes", "notes_analyzed", "unique_themes_found", "analysis_timestamp"],
       "properties": {
+        "source_notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "source_type"],
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "date": { "$ref": "#/definitions/isoDate" },
+              "source_type": { "type": "string", "enum": ["local", "notion"] }
+            }
+          },
+          "minItems": 1
+        },
         "themes": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "frequency", "pillar_alignment", "content_potential", "suggested_angles", "example_notes"],
+            "required": ["name", "frequency", "source_note_ids", "pillar_alignment", "content_potential", "suggested_angles"],
             "properties": {
               "name": { "type": "string" },
               "frequency": { "type": "integer", "minimum": 1 },
+              "source_note_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
               "pillar_alignment": { "type": "array", "items": { "type": "string" } },
               "content_potential": { "$ref": "#/definitions/priority" },
               "suggested_angles": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
@@ -123,13 +230,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["idea", "potential", "reason"],
+            "required": ["idea", "potential", "reason", "source_note_id"],
             "properties": {
               "idea": { "type": "string" },
               "potential": { "type": "string", "enum": ["High", "Medium"] },
               "reason": { "type": "string" },
               "related_themes": { "type": "array", "items": { "type": "string" } },
-              "source_note": { "type": "string" }
+              "source_note_id": { "type": "string" }
             }
           }
         },
@@ -170,13 +277,27 @@
 
     "content-agent": {
       "type": "object",
-      "required": ["source_analysis", "generation_timestamp"],
+      "required": ["source_analysis", "source_reference", "generation_timestamp"],
       "properties": {
+        "source_reference": {
+          "type": "object",
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "type": "string", "enum": ["local_file", "notion_page", "url"] },
+            "path": { "type": "string" },
+            "title": { "type": "string" },
+            "date": { "$ref": "#/definitions/isoDate" },
+            "original_sources": {
+              "type": "array",
+              "items": { "$ref": "#/shared/source_citation" }
+            }
+          }
+        },
         "linkedin": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["version", "hook", "body", "cta", "hashtags", "character_count", "tone", "key_message"],
+            "required": ["version", "hook", "body", "cta", "hashtags", "character_count", "tone", "key_message", "sources_referenced"],
             "properties": {
               "version": { "type": "integer", "minimum": 1 },
               "hook": { "type": "string", "minLength": 10 },
@@ -186,7 +307,11 @@
               "character_count": { "type": "integer", "minimum": 500, "maximum": 2000 },
               "tone": { "type": "string", "enum": ["educational", "provocative", "storytelling"] },
               "stories_used": { "type": "array", "items": { "type": "string" } },
-              "key_message": { "type": "string" }
+              "key_message": { "type": "string" },
+              "sources_referenced": {
+                "type": "array",
+                "items": { "$ref": "#/shared/source_citation" }
+              }
             }
           }
         },
@@ -194,13 +319,17 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["tweets", "hook_tweet", "cta_tweet", "thread_count", "tone"],
+            "required": ["tweets", "hook_tweet", "cta_tweet", "thread_count", "tone", "sources_referenced"],
             "properties": {
               "tweets": { "type": "array", "items": { "type": "string", "maxLength": 280 }, "minItems": 4, "maxItems": 12 },
               "hook_tweet": { "type": "string", "maxLength": 280 },
               "cta_tweet": { "type": "string", "maxLength": 280 },
               "thread_count": { "type": "integer", "minimum": 4, "maximum": 12 },
-              "tone": { "type": "string" }
+              "tone": { "type": "string" },
+              "sources_referenced": {
+                "type": "array",
+                "items": { "$ref": "#/shared/source_citation" }
+              }
             }
           }
         },
@@ -208,14 +337,18 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["intro", "main_content", "takeaways", "word_count", "tone"],
+            "required": ["intro", "main_content", "takeaways", "word_count", "tone", "sources_referenced"],
             "properties": {
               "intro": { "type": "string", "minLength": 50 },
               "main_content": { "type": "string", "minLength": 200 },
               "takeaways": { "type": "array", "items": { "type": "string" }, "minItems": 3, "maxItems": 5 },
               "word_count": { "type": "integer", "minimum": 400, "maximum": 1000 },
               "stories_used": { "type": "array", "items": { "type": "string" } },
-              "tone": { "type": "string" }
+              "tone": { "type": "string" },
+              "sources_referenced": {
+                "type": "array",
+                "items": { "$ref": "#/shared/source_citation" }
+              }
             }
           }
         },
@@ -225,7 +358,17 @@
           "properties": {
             "main_thesis": { "type": "string" },
             "key_points": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "data_points": { "type": "array", "items": { "type": "string" } },
+            "data_points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["fact"],
+                "properties": {
+                  "fact": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            },
             "matched_themes": { "type": "array", "items": { "type": "string" } },
             "matched_stories": { "type": "array", "items": { "type": "string" } }
           }
@@ -378,7 +521,12 @@
   },
 
   "validation": {
-    "instructions": "To validate agent output, use the schema corresponding to the agent name from agents.{agent-name}. Validation should check: 1) Required fields present, 2) Field types match, 3) Enums contain valid values, 4) Arrays meet min/max constraints.",
-    "error_handling": "If validation fails, return error with: { agent: 'agent-name', errors: [{ field: 'path.to.field', message: 'description' }] }. Do NOT reject output for non-critical fields - log warning and continue."
+    "instructions": "To validate agent output, use the schema corresponding to the agent name from agents.{agent-name}. Validation should check: 1) Required fields present, 2) Field types match, 3) Enums contain valid values, 4) Arrays meet min/max constraints. 5) All source citations have url and name.",
+    "source_requirements": {
+      "intelligence-agent": "Every insight must have source.url and source.name. Breaking news must have sources[] array. Trends must have evidence_sources[] with 2+ items.",
+      "content-agent": "source_reference is required. Each platform output must include sources_referenced[] array.",
+      "pattern-agent": "source_notes[] is required. Each theme must have source_note_ids[] linking to source_notes."
+    },
+    "error_handling": "If validation fails, return error with: { agent: 'agent-name', errors: [{ field: 'path.to.field', message: 'description' }] }. Retry agent execution (max 2) for missing required source fields."
   }
 }

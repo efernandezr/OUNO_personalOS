@@ -1,6 +1,6 @@
 # PersonalOS Status
 
-> Last updated: 2026-01-08 (after /market-intelligence with Firecrawl enforcement)
+> Last updated: 2026-01-10 (after /market-intelligence quick scan)
 > Run `/sync-status` to rebuild this file from project state
 
 ## Quick State
@@ -8,8 +8,8 @@
 | Field | Value |
 |-------|-------|
 | **Phase** | Active (setup complete, commands operational) |
-| **Last Command** | /market-intelligence |
-| **Last Output** | outputs/intelligence/2026-01-08-market-brief.md |
+| **Last Command** | /market-intelligence --depth quick |
+| **Last Output** | outputs/intelligence/2026-01-10-market-brief.md |
 | **Blockers** | None |
 
 ## What's Working
@@ -38,6 +38,7 @@
 
 | Date | Command | Output | Notes |
 |------|---------|--------|-------|
+| 2026-01-10 | /market-intelligence --depth quick | outputs/intelligence/2026-01-10-market-brief.md | 5 sources (1 failed), 7 insights, 3 trends, **Unified template** - Report Metadata + Sources table, 3 insights synced to Notion |
 | 2026-01-08 | /market-intelligence | outputs/intelligence/2026-01-08-market-brief.md | 8 sources, 13 insights, 6 trends (Firecrawl enforcement test: 7/7 success, 0 fallbacks) |
 | 2026-01-08 | /content-repurpose | outputs/content/2026-01-08-ai-transformation-leadership/ | 2 LinkedIn, 1 Twitter thread, 1 newsletter (AI job cuts leadership) |
 | 2026-01-08 | /market-intelligence | outputs/intelligence/2026-01-08-market-brief.md | 8 sources, 10 insights, 5 trends (operative agents test) |

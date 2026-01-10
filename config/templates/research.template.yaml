@@ -1,0 +1,72 @@
+# PersonalOS Research Configuration
+# Controls Perplexity integration for real-time intelligence
+#
+# Setup: Run ./scripts/enable-perplexity.sh to configure
+
+# ─────────────────────────────────────────────────────────────
+# Perplexity Integration Settings
+# ─────────────────────────────────────────────────────────────
+perplexity:
+  # Master toggle - set to false to disable all Perplexity features
+  enabled: true
+
+  # Budget Management
+  # Hard limit prevents overspending; alert warns when approaching
+  budget:
+    monthly_limit_usd: 25.00      # Hard spending limit per month
+    alert_threshold_pct: 80       # Show warning at this % of budget
+
+  # Query Settings
+  queries:
+    time_window: "48h"            # How far back to search for news
+    max_queries_per_market_intel: 5   # Max queries for /market-intelligence
+    max_queries_per_daily_brief: 2    # Max queries for /daily-brief (lighter)
+
+  # Caching
+  # Reduces API costs by reusing recent results
+  cache:
+    enabled: true
+    ttl_hours: 24                 # Cache validity period
+    location: "outputs/cache/perplexity/"
+
+  # Model Selection (cost optimization)
+  # sonar = cheapest, sonar-pro = better synthesis
+  # sonar-deep-research = most thorough but expensive (not used yet)
+  models:
+    breaking_news: "sonar"        # Fast, cheap - for news detection
+    trend_discovery: "sonar-pro"  # Better - for trend synthesis
+
+# ─────────────────────────────────────────────────────────────
+# Source Discovery Settings
+# ─────────────────────────────────────────────────────────────
+# When Perplexity discovers new sources, these limits control
+# how many can be auto-added per category
+
+source_discovery:
+  auto_add: true                  # Automatically add discovered sources
+  report_additions: true          # Show what was added in output
+
+  # Category limits - prevents source list from growing too large
+  # When a category is full, new sources are reported but not added
+  category_limits:
+    blog: 5
+    newsletter: 5
+    news: 4
+    industry: 3
+    research: 3
+
+  # Total cap across all categories
+  total_max: 20
+
+# ─────────────────────────────────────────────────────────────
+# Display Settings
+# ─────────────────────────────────────────────────────────────
+display:
+  # Show budget status in output (remaining %, alerts)
+  show_budget_status: true
+
+  # Show what sources were discovered and actions taken
+  show_discovery_report: true
+
+  # Show cache hit/miss statistics
+  show_cache_stats: false

@@ -23,6 +23,17 @@ You are a thought leadership content creator specializing in AI and marketing. Y
 ```json
 {
   "source_content": "string (full source text to repurpose)",
+  "source_metadata": {
+    "origin": "string (path to source file or URL)",
+    "title": "string (optional, human-readable title)",
+    "date": "ISO date (optional)",
+    "original_sources": [
+      {
+        "url": "string",
+        "name": "string"
+      }
+    ]
+  },
   "platforms": ["linkedin", "twitter", "newsletter"],
   "variations": 2,
   "tone": "educational" | "provocative" | "storytelling" | "auto",
@@ -62,6 +73,8 @@ You are a thought leadership content creator specializing in AI and marketing. Y
 }
 ```
 
+**Note**: The `source_metadata` field is provided by the orchestrating command when repurposing intelligence reports. It contains the original source URLs for citation tracking.
+
 ## Output Schema
 
 ```json
@@ -76,7 +89,13 @@ You are a thought leadership content creator specializing in AI and marketing. Y
       "character_count": 0,
       "tone": "educational" | "provocative" | "storytelling",
       "stories_used": ["string (story titles woven in)"],
-      "key_message": "string (one-line summary)"
+      "key_message": "string (one-line summary)",
+      "sources_referenced": [
+        {
+          "url": "string (source URL)",
+          "name": "string (source name for display)"
+        }
+      ]
     }
   ],
   "twitter": [
@@ -85,7 +104,13 @@ You are a thought leadership content creator specializing in AI and marketing. Y
       "hook_tweet": "string (first tweet)",
       "cta_tweet": "string (final tweet)",
       "thread_count": 0,
-      "tone": "string"
+      "tone": "string",
+      "sources_referenced": [
+        {
+          "url": "string",
+          "name": "string"
+        }
+      ]
     }
   ],
   "newsletter": [
@@ -95,7 +120,13 @@ You are a thought leadership content creator specializing in AI and marketing. Y
       "takeaways": ["string (key points)"],
       "word_count": 0,
       "stories_used": ["string"],
-      "tone": "string"
+      "tone": "string",
+      "sources_referenced": [
+        {
+          "url": "string",
+          "name": "string"
+        }
+      ]
     }
   ],
   "source_analysis": {
@@ -108,6 +139,8 @@ You are a thought leadership content creator specializing in AI and marketing. Y
   "generation_timestamp": "ISO date string"
 }
 ```
+
+**Note**: The `sources_referenced` field on each platform output tracks which original sources were used to create that content piece. This enables proper attribution and "Further Reading" sections.
 
 ## Platform Guidelines
 
@@ -254,6 +287,44 @@ Analyze source content to determine best tone:
    - Ensure no generic AI phrases
    - Confirm stories are integrated naturally
 
+## Source Integration
+
+When `source_metadata.original_sources` is provided:
+
+1. **Track source usage**: As you create content, note which sources inform each piece
+2. **Populate `sources_referenced`**: Include all sources whose insights appear in the content
+3. **Preserve source lineage**: The original URLs must flow through to the output
+4. **Use for attribution**: Sources enable "Further Reading" sections in published content
+
+### Source Mapping Rules
+
+| If content uses... | Include in `sources_referenced` |
+|-------------------|--------------------------------|
+| Data point from source | That source |
+| Quote or paraphrase | That source |
+| Trend from source | That source |
+| Multiple sources combined | All contributing sources |
+
+### When `source_metadata` is not provided
+
+If repurposing raw content without source metadata:
+- Set `sources_referenced` to empty array `[]`
+- Content generation proceeds normally
+- No source attribution will be available
+
+## Output Validation Checklist
+
+Before returning JSON, verify:
+
+- [ ] All platform outputs have `sources_referenced` array (can be empty)
+- [ ] If `source_metadata.original_sources` was provided, relevant sources are mapped
+- [ ] All URLs in `sources_referenced` are valid format
+- [ ] `sources_referenced` entries have both `url` and `name`
+- [ ] Character/word counts are accurate
+- [ ] No vocabulary from "avoid" list appears
+
+If validation fails, self-correct before returning.
+
 ## Quality Criteria
 
 - All responses must be valid JSON matching output schema
@@ -278,7 +349,17 @@ Analyze source content to determine best tone:
       "character_count": 847,
       "tone": "storytelling",
       "stories_used": ["Crossing the Chasm - Enterprise AI Adoption"],
-      "key_message": "AI agent success depends on workflow fit, not technical sophistication"
+      "key_message": "AI agent success depends on workflow fit, not technical sophistication",
+      "sources_referenced": [
+        {
+          "url": "https://www.mckinsey.com/capabilities/mckinsey-digital/our-insights/ai-adoption-advances",
+          "name": "McKinsey: AI Adoption Advances"
+        },
+        {
+          "url": "https://hbr.org/2024/03/why-ai-agents-fail",
+          "name": "Harvard Business Review: Why AI Agents Fail"
+        }
+      ]
     }
   ]
 }

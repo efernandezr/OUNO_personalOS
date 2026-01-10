@@ -21,6 +21,7 @@ PersonalOS is a collection of Claude Code slash commands and sub-agents designed
 - [Claude Code](https://claude.ai/code) installed
 - Notion account with MCP integration configured
 - Firecrawl API key (for web scraping)
+- Perplexity API key (optional, for real-time intelligence) - [Get one here](https://www.perplexity.ai/settings/api)
 
 ### Installation
 
@@ -68,11 +69,34 @@ The setup script will:
 3. Restart Claude Code to load the MCP servers
 4. Run your first command: `/daily-brief`
 
+### Enable Real-Time Intelligence (Optional)
+
+PersonalOS can use Perplexity API to enhance `/market-intelligence` and `/daily-brief` with:
+- **Breaking news detection** (last 48 hours)
+- **Trend discovery** beyond configured sources
+- **Automatic source discovery**
+
+To enable:
+
+```bash
+# Run the setup script
+./scripts/enable-perplexity.sh
+```
+
+This will:
+- Configure the Perplexity MCP server
+- Create `config/research.yaml` with budget settings
+- Set up caching to manage API costs
+
+**Budget**: Default $25/month with configurable hard limit and alerts.
+
+**Skip for now?** Commands work without Perplexity - you'll just miss real-time intelligence. Enable it anytime later.
+
 ## Commands
 
 ### `/market-intelligence`
 
-Scan configured sources for AI marketing insights, trends, and developments.
+Scan configured sources for AI marketing insights, trends, and developments. Includes real-time breaking news and trend discovery when Perplexity is enabled.
 
 ```bash
 # Standard scan (last 24 hours, all high/medium priority sources)
@@ -86,17 +110,28 @@ Scan configured sources for AI marketing insights, trends, and developments.
 
 # Extended timeframe
 /market-intelligence --timeframe week
+
+# Skip real-time intelligence (faster, no Perplexity budget)
+/market-intelligence --no-real-time
+
+# Force fresh Perplexity data (ignores cache)
+/market-intelligence --force-fresh
 ```
 
 **Output:** `outputs/intelligence/{date}-market-brief.md`
 
 **Notion Sync:** Creates entries in "POS: Market Intelligence" database
 
+**Real-Time Features** (requires Perplexity):
+- Breaking news from the last 48 hours
+- Trend signals across the web
+- New sources discovered and auto-added
+
 ---
 
 ### `/daily-brief`
 
-Generate a personalized morning briefing combining market intelligence with priorities.
+Generate a personalized morning briefing combining market intelligence with priorities. Includes "What's Breaking" section when Perplexity is enabled.
 
 ```bash
 # Standard brief (10 min read)
@@ -107,11 +142,18 @@ Generate a personalized morning briefing combining market intelligence with prio
 
 # Include pending tasks from Notion
 /daily-brief --include-todos
+
+# Skip real-time intelligence (faster)
+/daily-brief --no-real-time
 ```
 
 **Output:** `outputs/daily/{date}-brief.md`
 
 **Notion Sync:** Creates entry in "POS: Daily Briefs" database
+
+**Real-Time Features** (requires Perplexity):
+- "What's Breaking" section with latest news
+- Max 2 Perplexity queries (lighter than /market-intelligence)
 
 ---
 
@@ -297,6 +339,50 @@ Create a feature specification from a planning conversation.
 
 **Note:** Specs are gitignored (personal to each user's improvements).
 
+## Output Format
+
+All PersonalOS reports follow a unified structure with consistent source citations.
+
+### Report Structure
+
+Every report includes:
+
+1. **Report Metadata** - Generation date, type, status, source count
+2. **Primary Content** - Varies by report type
+3. **Sources** - All referenced URLs with clickable links
+
+### Source Citations
+
+Reports include inline source links and a consolidated Sources section:
+
+```markdown
+### Finding Title
+
+Key insight from the source content.
+
+**Source**: [Article Name](https://example.com/article)
+
+---
+
+## Sources
+
+All sources referenced in this report:
+
+| Source | URL | Type |
+|--------|-----|------|
+| Article Name | [link](https://example.com) | firecrawl |
+```
+
+This ensures all claims are traceable and verifiable. See `.claude/docs/report-template.md` for complete template documentation.
+
+### Source Types
+
+| Type | Description |
+|------|-------------|
+| `firecrawl` | Content extracted via Firecrawl MCP |
+| `perplexity` | Real-time intelligence via Perplexity |
+| `internal` | Internal notes (brain dumps) |
+
 ## Directory Structure
 
 ```
@@ -312,7 +398,8 @@ PersonalOS/
 │   ├── personal-context.yaml # Personal stories & experiences
 │   ├── personal-context-guide.md # Story collection guide
 │   ├── goals.yaml           # Tracking goals
-│   └── notion-mapping.yaml  # Notion database IDs
+│   ├── notion-mapping.yaml  # Notion database IDs
+│   └── research.yaml        # Perplexity settings (optional)
 │
 ├── .claude/commands/         # Slash command definitions
 │   ├── market-intelligence.md
@@ -333,6 +420,9 @@ PersonalOS/
 │   ├── voice-calibration-agent.md
 │   ├── sync-agent.md
 │   └── sync-brain-dumps-agent.md
+│
+├── .claude/docs/            # Framework documentation
+│   └── report-template.md  # Unified output template
 │
 ├── .claude/utils/           # Utility files
 │   └── schemas.json        # JSON validation schemas
@@ -454,6 +544,13 @@ PersonalOS uses **Task tool delegation** to specialized agents for complex tasks
 | `sync-brain-dumps-agent` | Pull brain dumps from Notion | Haiku |
 
 Agent definitions are in `.claude/agents/` and can be customized to improve output quality.
+
+### JSON Schema Validation
+
+Agent outputs are validated against schemas defined in `.claude/utils/schemas.json`. This ensures:
+- Required source citations are always present
+- Output structure is consistent across runs
+- Invalid responses trigger automatic retries (max 2)
 
 ## Workflows
 

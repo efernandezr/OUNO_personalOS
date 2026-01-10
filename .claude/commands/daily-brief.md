@@ -21,6 +21,14 @@ Generate a personalized daily briefing combining market intelligence with priori
 
 - `--include-todos`: Include pending tasks from Notion (default: false)
 
+- `--no-real-time`: Skip Perplexity queries, use only configured sources
+  - Use when you want faster execution without real-time discovery
+  - Budget is not consumed when this flag is set
+
+- `--force-fresh`: Ignore Perplexity cache and fetch fresh data
+  - Use sparingly as it consumes more budget
+  - Only affects Perplexity queries, not Firecrawl
+
 ## Orchestration Pattern
 
 This command uses **Task tool delegation** to the `intelligence-agent` in quick mode.
@@ -28,30 +36,36 @@ This command uses **Task tool delegation** to the `intelligence-agent` in quick 
 ```
 Orchestrator (this command)     →     intelligence-agent
 ─────────────────────────────────────────────────────────
-1. Parse parameters
-2. Load configs
-3. Construct quick-mode input
-                                 →    4. Quick scan (high-priority sources)
-                                 →    5. Return top insights
-6. Receive JSON output           ←
-7. Query Notion todos (optional)
-8. Generate content opportunity
-9. Format brief markdown
-10. Write file
-11. Sync to Notion (sync-agent)
-12. Update STATUS.md
+1. Parse parameters (incl. --no-real-time)
+2. Load configs (topics, sources, research)
+3. Filter high-priority sources only
+4. Construct quick-mode input
+                                 →    5. Phase 0: Config check
+                                 →    6. Phase 1: Breaking news (Perplexity, max 2 queries)
+                                 →    7. Phase 2: Quick scan (Firecrawl)
+                                 →    8. Phase 3: Synthesis
+                                 →    9. Return JSON
+10. Receive JSON output          ←
+11. Query Notion todos (optional)
+12. Generate content opportunity
+13. Format brief markdown (incl. What's Breaking)
+14. Write files
+15. Sync to Notion (sync-agent)
+16. Update STATUS.md
 ```
 
 ## Tool Enforcement
 
 When invoking the intelligence-agent via Task tool:
+- **Perplexity MCP** for breaking news discovery (if configured and enabled)
 - **Firecrawl MCP is REQUIRED** for web scraping (`mcp__firecrawl__firecrawl_scrape`)
 - **WebSearch is NOT acceptable** as the primary scanning tool
 - The agent MUST track tool usage in `scan_metadata` output field
 - If `degraded_mode: true` in output, surface this warning to user
+- If `real_time_intelligence.status` is not "success", surface the reason to user
 
 Include this reminder in the agent prompt:
-> "CRITICAL: Use Firecrawl MCP for all web scraping. See Tool Selection Rules in agent definition."
+> "CRITICAL: Use Firecrawl MCP for all web scraping. Use Perplexity for breaking news if configured (max 2 queries). See Tool Selection Rules in agent definition."
 
 ## Execution Steps
 
@@ -59,9 +73,12 @@ Include this reminder in the agent prompt:
 
 Read these config files:
 - `config/topics.yaml` - Get priority topics and content pillars
-- `config/sources.yaml` - Filter for high-priority sources only
+- `config/sources.yaml` - Filter for high-priority sources only (max 5)
 - `config/notion-mapping.yaml` - Get database IDs
 - `config/goals.yaml` - Get current metrics targets
+- `config/research.yaml` - Get Perplexity settings (if exists)
+  - If file doesn't exist, set `perplexity_enabled: false`
+  - Extract: `enabled`, `budget.monthly_limit_usd`, `cache.ttl_hours`, `queries.max_queries_per_daily_brief`
 
 ### Step 2: Invoke Intelligence Agent - Quick Mode (Task Tool)
 
@@ -73,7 +90,7 @@ Task tool call:
   - prompt: |
       You are the intelligence-agent for PersonalOS.
 
-      [Read and include content of .claude/agents/intelligence-agent.md]
+      [Read and include full content of .claude/agents/intelligence-agent.md]
 
       ## Your Task
 
@@ -84,10 +101,20 @@ Task tool call:
         "mode": "quick",
         "timeframe": "24h",
         "depth": "quick",
+        "no_real_time": "{true if --no-real-time flag set, else false}",
+        "force_fresh": "{true if --force-fresh flag set, else false}",
         "topics": [/* from topics.yaml - primary only */],
-        "sources": [/* from sources.yaml - high priority only, max 5 */]
+        "sources": [/* from sources.yaml - high priority only, max 5 */],
+        "research_config": {
+          "perplexity_enabled": "{from research.yaml or false}",
+          "budget_limit_usd": "{from research.yaml or 25.00}",
+          "cache_ttl_hours": "{from research.yaml or 24}",
+          "max_queries": "{from research.yaml queries.max_queries_per_daily_brief or 2}"
+        }
       }
       ```
+
+      CRITICAL: Use Perplexity for breaking news if configured (max 2 queries). Use Firecrawl MCP for all web scraping.
 
       Return valid JSON matching output schema. Target 5-7 insights max.
 ```
@@ -133,14 +160,45 @@ Transform agent JSON into brief format:
 
 ```markdown
 # Daily Brief: {date}
-**Generated**: {timestamp}
+
+## Report Metadata
+| Field | Value |
+|-------|-------|
+| **Generated** | {timestamp} |
+| **Report Type** | daily-brief |
+| **Status** | {scan_metadata.degraded_mode ? "degraded" : "success"} |
+| **Real-Time** | {real_time_intelligence.status} |
+
+---
+
+{If real_time_intelligence.status == "not_configured":}
+> ℹ️ **REAL-TIME INTELLIGENCE NOT CONFIGURED**
+> To enable breaking news detection, run: `./scripts/enable-perplexity.sh`
+
+{If real_time_intelligence.status == "budget_exceeded":}
+> ⚠️ **PERPLEXITY BUDGET EXCEEDED**
+> Monthly budget reached. Real-time intelligence disabled until next month.
+
+{If real_time_intelligence.status == "error":}
+> ⚠️ **REAL-TIME INTELLIGENCE UNAVAILABLE**
+> {real_time_intelligence.status_reason}
 
 ## Good Morning, Enrique
+
+{If real_time_intelligence.status == "success" and breaking_news not empty:}
+### 🔴 What's Breaking (Last 48h)
+
+{For each breaking_news item[:3]:}
+**{title}**
+{summary}
+**Sources**: {For each source in sources: [{source.name}]({source.url}), }
+
+---
 
 ### Must-Know Today
 
 {For each insight from agent where priority in ["High", "Medium"][:5]:}
-- **{title}**: {summary truncated to 150 chars} [→]({source_url})
+- **{title}**: {summary truncated to 150 chars} [→]({source.url})
 
 ### Metrics Snapshot
 {From goals.yaml - display current vs target}
@@ -161,17 +219,33 @@ Transform agent JSON into brief format:
 
 ### Recommended Reading
 {For each insight[:3]:}
-1. [{title}]({source_url}) - {suggested_angle}
+1. [{title}]({source.url}) - {suggested_angle}
 
 ### Focus Suggestion
 Based on today's intelligence: {generate 1-2 sentence recommendation}
+
+---
+
+## Sources
+
+All sources referenced in this brief:
+
+| Source | URL | Type |
+|--------|-----|------|
+{For each unique source in insights + breaking_news:}
+| {source.name} | [{source.url}]({source.url}) | {source.type or "firecrawl"} |
+
+---
+
+*Generated by PersonalOS | intelligence-agent (quick mode) | {date}*
 ```
 
 ### Step 6: Write Output File (Orchestrator)
 
 1. Create directory if needed: `outputs/daily/`
-2. Write to: `outputs/daily/{YYYY-MM-DD}-brief.md`
-3. Write agent log to: `outputs/logs/{YYYY-MM-DD}-daily-brief-agent.json`
+2. Write to: `outputs/daily/{YYYY-MM-DD}-{HHMM}-brief.md`
+   - Include timestamp to preserve multiple briefs per day
+3. Write agent log to: `outputs/logs/{YYYY-MM-DD}-{HHMM}-daily-brief-agent.json`
 
 ### Step 7: Sync to Notion (Orchestrator → sync-agent)
 
@@ -267,13 +341,20 @@ dont_retry_on:
 ```
 
 ### Required Fields (Quick Mode)
+- `real_time_intelligence.status` (enum: success, skipped, not_configured, budget_exceeded, error)
 - `insights` (array, minimum 1)
 - `content_opportunities` (array)
 - `sources_scanned` (integer)
 - `scan_metadata.degraded_mode` (boolean)
 
+### Real-Time Intelligence Fields (if status == "success")
+- `real_time_intelligence.breaking_news[]` (array of news items)
+- `real_time_intelligence.queries_used` (integer, should be ≤2)
+- `real_time_intelligence.budget_remaining_pct` (number)
+
 ### Validation Notes
 - Quick mode may return fewer insights - this is acceptable
+- Quick mode uses max 2 Perplexity queries (vs 5 for /market-intelligence)
 - Validate but be lenient on optional fields
 - Log warnings, don't fail on non-critical issues
 

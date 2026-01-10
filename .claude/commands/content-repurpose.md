@@ -75,7 +75,32 @@ If Notion URL:
 Use mcp__notion__notion-fetch with page ID extracted from URL
 ```
 
-### Step 3: Identify Relevant Themes (Orchestrator)
+### Step 3: Extract Source Metadata (Orchestrator)
+
+If source is an intelligence report (contains "Source Log" or "Sources" section):
+1. Parse the "Sources" table or "Source Log" section for URLs
+2. Extract source links from insight sections (`[Name](url)` format)
+3. Build `original_sources` array with `{url, name}` objects
+
+```json
+{
+  "source_metadata": {
+    "origin": "{source path or Notion URL}",
+    "title": "{extracted title from source}",
+    "date": "{date from source if available}",
+    "original_sources": [
+      {"url": "https://example.com/article", "name": "Article Title"},
+      {"url": "https://another.com/post", "name": "Post Name"}
+    ]
+  }
+}
+```
+
+If source is raw content without source tracking:
+- Set `origin` to the source path
+- Set `original_sources` to empty array `[]`
+
+### Step 4: Identify Relevant Themes (Orchestrator)
 
 Analyze source content to extract:
 - Main thesis
@@ -83,7 +108,7 @@ Analyze source content to extract:
 - Match against story themes in personal-context.yaml
 - Select 1-2 relevant stories that could be woven in
 
-### Step 4: Invoke Content Agent (Task Tool)
+### Step 5: Invoke Content Agent (Task Tool)
 
 ```
 Task tool call:
@@ -102,6 +127,12 @@ Task tool call:
       ```json
       {
         "source_content": "{full source text}",
+        "source_metadata": {
+          "origin": "{source path or Notion URL}",
+          "title": "{extracted title}",
+          "date": "{date if available}",
+          "original_sources": [{url, name} objects from Step 3]
+        },
         "platforms": {from parameter or ["linkedin", "twitter", "newsletter"]},
         "variations": {from parameter or 2},
         "tone": "{from parameter or 'auto'}",
@@ -118,18 +149,18 @@ Task tool call:
       }
       ```
 
-      Return valid JSON matching the output schema.
+      Return valid JSON matching the output schema. Ensure `sources_referenced` is populated on each platform output.
 ```
 
-### Step 5: Process Agent Output (Orchestrator)
+### Step 6: Process Agent Output (Orchestrator)
 
 The content-agent returns:
-- `linkedin[]` - LinkedIn post variations with hook, body, cta, hashtags
-- `twitter[]` - Twitter thread with individual tweets
-- `newsletter[]` - Newsletter snippet with intro, content, takeaways
+- `linkedin[]` - LinkedIn post variations with hook, body, cta, hashtags, sources_referenced
+- `twitter[]` - Twitter thread with individual tweets, sources_referenced
+- `newsletter[]` - Newsletter snippet with intro, content, takeaways, sources_referenced
 - `source_analysis` - Main thesis, key points, matched stories
 
-### Step 6: Write Output Files (Orchestrator)
+### Step 7: Write Output Files (Orchestrator)
 
 Create output folder: `outputs/content/{YYYY-MM-DD}-{slug}/`
 
@@ -165,9 +196,18 @@ outputs/content/{date}-{slug}/
 
 ---
 
-**Character Count**: {character_count}
-**Stories Used**: {stories_used joined}
-**Key Message**: {key_message}
+## Sources Referenced
+
+{For each source in sources_referenced:}
+- [{source.name}]({source.url})
+
+---
+
+**Generation Info**
+- Character Count: {character_count}
+- Stories Used: {stories_used joined}
+- Key Message: {key_message}
+- Original Source: {source_metadata.origin}
 ```
 
 ### File Format: Twitter Thread
@@ -211,11 +251,18 @@ outputs/content/{date}-{slug}/
 {For each takeaway:}
 - {takeaway}
 
+## Further Reading
+
+{For each source in sources_referenced:}
+- [{source.name}]({source.url})
+
 ---
 
-**Word Count**: {word_count}
-**Tone**: {tone}
-**Stories Used**: {stories_used}
+**Generation Info**
+- Word Count: {word_count}
+- Tone: {tone}
+- Stories Used: {stories_used}
+- Original Source: {source_metadata.origin}
 ```
 
 ### File Format: Summary
@@ -250,12 +297,12 @@ outputs/content/{date}-{slug}/
 Review each file and publish when ready.
 ```
 
-### Step 7: Write Agent Log (Orchestrator)
+### Step 8: Write Agent Log (Orchestrator)
 
 Write to: `outputs/logs/{YYYY-MM-DD}-content-agent.json`
 Include: input, output, timestamp
 
-### Step 8: Sync to Notion Content Calendar (sync-agent)
+### Step 9: Sync to Notion Content Calendar (sync-agent)
 
 For each generated piece:
 
@@ -289,7 +336,7 @@ Task tool call:
       ```
 ```
 
-### Step 9: Update STATUS.md (Orchestrator)
+### Step 10: Update STATUS.md (Orchestrator)
 
 1. Set **Last Command** to `/content-repurpose`
 2. Set **Last Output** to the output folder path
@@ -390,14 +437,17 @@ dont_retry_on:
 - `body` (string, min 100 chars)
 - `character_count` (integer, 500-2000)
 - `hashtags` (array, 3-5 items)
+- `sources_referenced` (array, can be empty if no source_metadata provided)
 
 **Twitter entries**:
 - `tweets` (array, 4-12 items)
 - Each tweet ≤ 280 characters
+- `sources_referenced` (array, can be empty)
 
 **Newsletter entries**:
 - `word_count` (integer, 400-1000)
 - `takeaways` (array, 3-5 items)
+- `sources_referenced` (array, can be empty)
 
 ### Validation on Failure
 1. Retry content-agent with specific feedback

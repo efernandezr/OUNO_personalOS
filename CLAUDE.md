@@ -170,9 +170,10 @@ The `sub-agents/` folder contains deprecated documentation. See `.claude/agents/
 - Daily: `outputs/daily/`
 
 ### Naming Conventions
-- Files: `YYYY-MM-DD-{descriptor}.md`
+- Intelligence/Briefs: `YYYY-MM-DD-HHMM-{descriptor}.md` (preserves multiple per day)
+- Analysis/Content: `YYYY-MM-DD-{descriptor}.md` (typically one per day)
 - Folders: `YYYY-MM-DD-{slug}/`
-- Logs: `YYYY-MM-DD-{command}.log`
+- Logs: `YYYY-MM-DD-HHMM-{command}.json`
 
 ---
 
@@ -215,6 +216,7 @@ When syncing to Notion:
 - `config/personal-context.yaml` - Personal stories, experiences, influences
 - `config/goals.yaml` - Tracking goals and targets
 - `config/notion-mapping.yaml` - Notion database IDs
+- `config/research.yaml` - Perplexity settings (optional, for real-time intelligence)
 
 ### Loading Configs
 Always load configuration at the start of command execution:
@@ -226,11 +228,61 @@ Always load configuration at the start of command execution:
 
 ---
 
+## Structured Outputs
+
+All PersonalOS reports follow a unified template and include mandatory source citations.
+
+### Report Template
+
+Every report follows this structure:
+
+1. **Report Metadata table** - Generated date, type, status, source count
+2. **Primary Content** - Varies by report type (see `.claude/docs/report-template.md`)
+3. **Sources section** - All URLs as clickable `[Name](url)` links
+
+### Source Citation Requirements
+
+- Every insight **MUST** have `source.url` and `source.name`
+- Every trend **MUST** have `evidence_sources[]` with 2+ items
+- Use inline links: `[Source Name](url)`
+- Include "Sources:" table at end of all reports
+- Agents validate output before returning
+
+### Source Citation Format
+
+**Inline citation**:
+```markdown
+**Source**: [Article Title](https://example.com/article)
+```
+
+**Multiple sources**:
+```markdown
+**Sources**: [Source 1](url1), [Source 2](url2)
+```
+
+**Sources table**:
+```markdown
+## Sources
+
+| Source | URL | Type |
+|--------|-----|------|
+| Name | [url](url) | firecrawl |
+```
+
+### Validation
+
+Commands validate agent JSON output and retry (max 2) if required source fields are missing. See `.claude/utils/schemas.json` for validation schemas.
+
+---
+
 ## Quality Standards
 
 ### Content Quality Checklist
 - [ ] Matches voice profile
 - [ ] Properly sourced and attributed
+- [ ] All insights have source URLs
+- [ ] Inline links use `[Name](url)` format
+- [ ] Sources section included at end
 - [ ] Actionable insights included
 - [ ] Appropriate length for platform
 - [ ] Proofread for clarity
@@ -239,7 +291,8 @@ Always load configuration at the start of command execution:
 - [ ] Correct file location
 - [ ] Proper naming convention
 - [ ] Notion sync completed
-- [ ] Metadata included (date, sources, etc.)
+- [ ] Report Metadata table at top
+- [ ] Sources table at end
 
 ---
 
@@ -299,6 +352,66 @@ When scraping sources:
 2. Handle errors gracefully
 3. Cache results when appropriate
 4. Extract only relevant content
+
+---
+
+## Research Tools
+
+### Perplexity MCP (Real-Time Intelligence)
+
+PersonalOS can use Perplexity for real-time discovery:
+- **Breaking news detection** (last 48h)
+- **Trend discovery** across the web
+- **New source identification**
+
+**Tools**:
+- `mcp__perplexity__perplexity_search` - Breaking news queries (sonar model)
+- `mcp__perplexity__perplexity_ask` - Trend synthesis (sonar-pro model)
+
+**Configuration**: `config/research.yaml` (default $25/month budget)
+
+**Enable**: Run `./scripts/enable-perplexity.sh` for guided setup
+
+### Workflow: Perplexity + Firecrawl
+
+Perplexity discovers → Firecrawl extracts → Agent synthesizes
+
+```
+Phase 0: Config Check
+  └─→ Check research.yaml, budget, cache
+
+Phase 1: Real-Time Discovery (Perplexity) - OPTIONAL
+  ├─→ Breaking news queries
+  └─→ Trend synthesis
+
+Phase 2: Content Extraction (Firecrawl) - ALWAYS RUNS
+  ├─→ Scrape configured sources
+  └─→ Extract structured content
+
+Phase 3: Synthesis
+  └─→ Merge and deduplicate results
+```
+
+### Tool Priority Order
+
+1. **Perplexity** (real-time discovery) - unless `--no-real-time` or budget exceeded
+2. **Firecrawl** (configured sources) - always runs
+3. **WebFetch** (fallback) - only if Firecrawl fails
+4. **WebSearch** (last resort) - only if all else fails
+
+### Graceful Degradation
+
+When Perplexity is not configured or unavailable:
+- Commands proceed normally with Firecrawl
+- Output shows informational message about enabling real-time intelligence
+- No errors, just reduced functionality
+
+### Budget Tracking
+
+- Usage tracked in `outputs/cache/perplexity/usage.yaml`
+- Alerts at 80% budget usage
+- Hard stop when budget exceeded
+- Cache (24h TTL) reduces API calls
 
 ---
 
@@ -400,3 +513,5 @@ When adding new config files:
 | 2.0 | 2026-01-08 | Operative agents: Task tool delegation, .claude/agents/, JSON output schemas |
 | 2.1 | 2026-01-08 | Voice calibration: /voice-calibrate, sample infrastructure, JSON validation, retry logic, personal context guide |
 | 2.2 | 2026-01-10 | Spec creation: /create-spec command, specs/ folder, improvement workflow |
+| 2.3 | 2026-01-10 | Perplexity integration: Real-time intelligence, breaking news, trend discovery, source auto-discovery |
+| 2.4 | 2026-01-10 | Unified output templates, source citation enforcement, JSON schema validation |
