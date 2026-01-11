@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║                   PersonalOS Setup                        ║"
-echo "║     AI-Powered Personal Branding Operating System         ║"
+echo "║        AI-Powered Content Operating System                ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -37,6 +37,17 @@ else
         cp "$template" "config/${filename}.yaml"
         echo -e "${GREEN}  ✓ Created config/${filename}.yaml${NC}"
     done
+fi
+
+# Create CLAUDE.md from template if it doesn't exist
+if [ -f "CLAUDE.md" ]; then
+    echo -e "${BLUE}  ○ CLAUDE.md already exists${NC}"
+else
+    if [ -f "CLAUDE.template.md" ]; then
+        cp "CLAUDE.template.md" "CLAUDE.md"
+        echo -e "${GREEN}  ✓ Created CLAUDE.md from template${NC}"
+        echo -e "${YELLOW}    → Edit CLAUDE.md to customize your user context${NC}"
+    fi
 fi
 
 echo ""
@@ -116,20 +127,26 @@ echo -e "${GREEN}Setup complete!${NC}"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo ""
-echo "1. ${BLUE}Configure your settings:${NC}"
-echo "   Edit the files in config/ with your personal information:"
+echo "1. ${BLUE}Customize your context:${NC}"
+echo "   Edit CLAUDE.md with your personal information:"
+echo "   - Your role and focus area"
+echo "   - Content pillars (3-5 topics you create content around)"
+echo "   - Voice characteristics"
+echo ""
+echo "2. ${BLUE}Configure your settings:${NC}"
+echo "   Edit the files in config/ with your preferences:"
 echo "   - config/voice-profile.yaml  → Your writing voice"
 echo "   - config/sources.yaml        → Sources to monitor"
 echo "   - config/topics.yaml         → Topics to track"
 echo "   - config/goals.yaml          → Your goals"
-echo "   - config/competitors.yaml    → Competitors to watch"
+echo "   - config/competitors.yaml    → People/orgs to watch"
 echo ""
-echo "2. ${BLUE}Set up Notion integration:${NC}"
+echo "3. ${BLUE}Set up Notion integration:${NC}"
 echo "   - Create databases in Notion using schemas in config/notion-mapping.template.yaml"
 echo "   - Copy database IDs to config/notion-mapping.yaml"
 echo "   - Configure Notion MCP in Claude Code settings"
 echo ""
-echo "3. ${BLUE}Configure MCP servers:${NC}"
+echo "4. ${BLUE}Configure MCP servers:${NC}"
 echo "   Add to your Claude Code settings:"
 echo '   {
      "mcpServers": {
@@ -148,7 +165,7 @@ echo '   {
      }
    }'
 echo ""
-echo "4. ${BLUE}Test your setup:${NC}"
+echo "5. ${BLUE}Test your setup:${NC}"
 echo "   cd $PROJECT_DIR"
 echo "   claude"
 echo "   /daily-brief"

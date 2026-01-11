@@ -1,18 +1,18 @@
 # PersonalOS
 
-An AI-powered personal branding operating system built on Claude Code. Transform market intelligence into thought leadership content with automated workflows, voice-matched content generation, and seamless Notion integration.
+An AI-powered content operating system built on Claude Code. Transform research and ideas into authentic, voice-matched content with automated workflows, intelligent source monitoring, and seamless Notion integration.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-PersonalOS is a collection of Claude Code slash commands and sub-agents designed to help thought leaders:
+PersonalOS is a collection of Claude Code slash commands and sub-agents designed to help content creators:
 
-- **Monitor** AI and marketing trends from 20+ curated sources
+- **Monitor** trends and developments from curated sources in your field
 - **Analyze** brain dumps and notes for content opportunities
-- **Generate** platform-optimized content that matches your voice
-- **Track** competitive intelligence and market movements
-- **Automate** daily briefings and weekly dashboards
+- **Generate** platform-optimized content that matches your authentic voice
+- **Track** industry movements and community developments
+- **Automate** daily briefings and content workflows
 
 ## Quick Start
 
@@ -101,7 +101,7 @@ This will:
 
 ### `/market-intelligence`
 
-Scan configured sources for AI marketing insights, trends, and developments. Includes real-time breaking news and trend discovery when Perplexity is enabled.
+Scan configured sources for insights, trends, and developments in your field. Includes real-time breaking news and trend discovery when Perplexity is enabled.
 
 ```bash
 # Standard scan (last 24 hours, all high/medium priority sources)
@@ -133,7 +133,7 @@ Scan configured sources for AI marketing insights, trends, and developments. Inc
 
 **Real-Time Features** (requires Perplexity):
 - Breaking news from the last 48 hours
-- Trend signals across the web
+- Trend signals across your topics
 - New sources discovered and auto-added
 
 **Deep Research** (requires Perplexity, `--deep` flag):
@@ -146,7 +146,7 @@ Scan configured sources for AI marketing insights, trends, and developments. Inc
 
 ### `/daily-brief`
 
-Generate a personalized morning briefing combining market intelligence with priorities. Includes "What's Breaking" section when Perplexity is enabled.
+Generate a personalized morning briefing combining intelligence from your sources with priorities. Includes "What's Breaking" section when Perplexity is enabled.
 
 ```bash
 # Standard brief (10 min read)
@@ -558,32 +558,32 @@ Define what topics to monitor:
 
 ```yaml
 primary_topics:
-  - name: "AI for Marketing"
-    keywords: ["AI marketing", "marketing automation"]
+  - name: "Your Main Topic"
+    keywords: ["keyword 1", "keyword 2"]
 
 secondary_topics:
-  - name: "Martech"
-    keywords: ["marketing technology"]
+  - name: "Supporting Topic"
+    keywords: ["related keyword"]
 
 emerging_topics:
-  - name: "AI Agents"
-    keywords: ["agentic AI", "autonomous agents"]
+  - name: "Trend to Watch"
+    keywords: ["emerging term", "new concept"]
 ```
 
 ### `config/sources.yaml`
 
-Configure sources for market intelligence:
+Configure sources for intelligence gathering:
 
 ```yaml
 sources:
-  - name: "Anthropic Blog"
-    url: "https://www.anthropic.com/news"
+  - name: "Industry Blog"
+    url: "https://example.com/blog"
     type: "blog"
     priority: "high"
 
-  - name: "Marketing AI Institute"
-    url: "https://www.marketingaiinstitute.com/blog"
-    type: "blog"
+  - name: "Newsletter Source"
+    url: "https://example.substack.com"
+    type: "newsletter"
     priority: "high"
 ```
 
@@ -681,6 +681,20 @@ Agent outputs are validated against schemas defined in `.claude/utils/schemas.js
 /market-intelligence --depth deep --timeframe week
 ```
 
+## Example: AI Marketing Use Case
+
+Here's how one user configures PersonalOS for AI marketing thought leadership:
+
+| Configuration | Example Values |
+|---------------|----------------|
+| **Topics** | AI for Marketing, Marketing Automation, AI Agents |
+| **Sources** | Anthropic Blog, Marketing AI Institute, industry newsletters |
+| **Voice** | Professional but approachable, data-informed, global enterprise context |
+| **Platforms** | LinkedIn (primary), Newsletter (secondary) |
+| **Content Pillars** | Enterprise transformation, practical applications, technical tutorials |
+
+This demonstrates how to adapt the framework for any domain - writers, consultants, educators, coaches, or any content creator can follow the same pattern with their own topics and sources.
+
 ## Brain Dump Format
 
 For best results, structure your brain dumps like this:
@@ -689,19 +703,19 @@ For best results, structure your brain dumps like this:
 # Brain Dump - 2026-01-06
 
 ## Ideas
-- Idea about AI agents in marketing
-- Thought on content automation
+- New angle on [your topic]
+- Thought on [related concept]
 
 ## Questions
 - What if we could automate X?
-- How can marketers leverage Y?
+- How can [your audience] leverage Y?
 
 ## Observations
-- Noticed trend in enterprise AI adoption
-- Interesting pattern in competitor content
+- Noticed trend in [your industry]
+- Interesting pattern in [area of interest]
 
 ## Tags
-#ai #marketing #content-idea
+#topic1 #topic2 #content-idea
 ```
 
 ## Performance Targets
@@ -818,13 +832,14 @@ PersonalOS separates **framework** (tracked in git) from **personal data** (stay
 ```
 PersonalOS/
 ├── Framework (tracked)
-│   ├── CLAUDE.md, README.md       # Documentation
-│   ├── .claude/commands/          # Slash commands
-│   ├── .claude/agents/            # Agent definitions
-│   ├── scripts/                   # Automation scripts
-│   └── config/templates/          # Config templates
+│   ├── CLAUDE.template.md, README.md  # Documentation templates
+│   ├── .claude/commands/              # Slash commands
+│   ├── .claude/agents/                # Agent definitions
+│   ├── scripts/                       # Automation scripts
+│   └── config/templates/              # Config templates
 │
 └── Personal Data (gitignored)
+    ├── CLAUDE.md                  # Your personal context (copy from template)
     ├── config/*.yaml              # Your actual configs
     ├── 1-capture/                 # Your inputs (brain-dumps, samples)
     ├── 2-research/                # Generated research
@@ -833,7 +848,7 @@ PersonalOS/
     └── system/                    # Logs, cache, specs
 ```
 
-When you clone, run `./scripts/setup.sh` to create your personal config files from templates.
+When you clone, run `./scripts/setup.sh` to create your personal config files from templates. Then copy `CLAUDE.template.md` to `CLAUDE.md` and customize it with your information.
 
 ## Improving PersonalOS
 

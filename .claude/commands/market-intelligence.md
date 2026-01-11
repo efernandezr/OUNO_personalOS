@@ -580,6 +580,10 @@ If `real_time_intelligence.sources_discovered` contains entries with `action: "a
 
 For each insight where priority == "High":
 
+**Deep Research field logic:**
+- If `deep_research.enabled == true`: Set `"Deep Research": "__YES__"`
+- Otherwise: Set `"Deep Research": "__NO__"` (or omit the field)
+
 ```
 Task tool call:
   - description: "Sync insight to Notion"
@@ -608,11 +612,15 @@ Task tool call:
             "Source": "{insight.source_url}",
             "Summary": "{insight.summary}",
             "Content Potential": "{insight.content_potential}",
-            "Status": "New"
+            "Status": "New",
+            "Deep Research": "__YES__"
           }
         }
       }
       ```
+
+      **Note**: Set "Deep Research" to "__YES__" only if this scan used the --deep flag.
+      Use "__NO__" or omit the field for standard scans.
 ```
 
 ## Agent Reference

@@ -2,7 +2,7 @@
 
 ## System Identity
 
-You are the orchestration agent for **PersonalOS**, an AI-powered personal branding and thought leadership operating system for Enrique.
+You are the orchestration agent for **PersonalOS**, an AI-powered content creation and voice management operating system.
 
 ### Your Core Responsibilities
 1. Execute slash commands with precision and consistency
@@ -22,25 +22,31 @@ You are the orchestration agent for **PersonalOS**, an AI-powered personal brand
 
 ## User Context
 
-### About Enrique
-- **Role**: AI Marketing Transformation Manager at Syngenta
-- **Scope**: Leading AI transformation across 90+ countries
-- **Current Focus**: Building dMAX platform, thought leadership content
-- **Platforms**: LinkedIn (primary), Newsletter (secondary)
+> **CUSTOMIZE THIS SECTION**: Replace the placeholders below with your personal information.
+
+### About You
+- **Role**: [Your role/title - e.g., "Marketing Director", "Consultant", "Educator", "Writer"]
+- **Scope**: [Your scope of work - e.g., "B2B SaaS content", "Executive coaching", "Technical tutorials"]
+- **Current Focus**: [Your primary focus - e.g., "Building audience", "Launching course", "Thought leadership"]
+- **Platforms**: [Your target platforms - e.g., "LinkedIn (primary), Newsletter (secondary)"]
 
 ### Content Pillars
-1. **AI for Marketing** - Enterprise transformation strategies
-2. **Claude Code for Marketing** - Practical applications and workflows
-3. **AI Agents for Marketing** - Building and implementing agents
-4. **Building Agents** - Technical tutorials and best practices
-5. **Digital Marketing Maturity** - Frameworks and assessments
+> Define 3-5 core topics that you create content around.
+
+1. **[Your Main Topic]** - Primary expertise area
+2. **[Supporting Topic]** - Related area of knowledge
+3. **[Adjacent Topic]** - Complementary expertise
+4. **[Emerging Interest]** - Topics you're exploring
+5. **[Practical Application]** - How-to content
 
 ### Voice Characteristics
-- Professional but approachable
-- Data-informed perspectives
-- Practical, actionable insights
-- Global/enterprise context
-- Authentic personal experiences
+> Describe your authentic writing voice.
+
+- [Tone descriptor 1 - e.g., "Professional but approachable"]
+- [Tone descriptor 2 - e.g., "Data-informed perspectives"]
+- [Tone descriptor 3 - e.g., "Practical, actionable insights"]
+- [Tone descriptor 4 - e.g., "Industry-specific context"]
+- [Tone descriptor 5 - e.g., "Authentic personal experiences"]
 
 See `config/voice-profile.yaml` for detailed voice specifications.
 
@@ -49,7 +55,7 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 ## Available Commands
 
 ### High Priority (MVP)
-- `/market-intelligence` - Scan sources for AI marketing insights
+- `/market-intelligence` - Scan sources for industry insights
   - `--deep [topic]` - Add deep research for comprehensive analysis
 - `/daily-brief` - Generate morning intelligence brief
 - `/brain-dump-analysis` - Analyze notes for patterns and opportunities
@@ -456,7 +462,8 @@ PersonalOS uses a **template-based sharing** approach:
 Tracked (Framework)          Gitignored (Personal)
 ─────────────────────        ────────────────────
 config/templates/*.yaml  →   config/*.yaml
-CLAUDE.md, README.md         1-capture/, 2-research/
+CLAUDE.template.md           CLAUDE.md
+README.md                    1-capture/, 2-research/
 .claude/commands/            3-content/, 4-archive/
 .claude/agents/              system/
 scripts/                     .claude/settings.local.json
@@ -466,8 +473,9 @@ scripts/                     .claude/settings.local.json
 
 1. Clone the repository
 2. Run `./scripts/setup.sh`
-3. Edit configs in `config/` with your personal data
-4. Never commit `config/*.yaml` files (they're gitignored)
+3. Copy `CLAUDE.template.md` to `CLAUDE.md` and customize
+4. Edit configs in `config/` with your personal data
+5. Never commit `config/*.yaml` or `CLAUDE.md` files (they're gitignored)
 
 ### For Contributors
 
@@ -478,10 +486,11 @@ When contributing to the framework:
 - Agent definitions (`.claude/agents/`)
 - Template configs (`config/templates/`)
 - Scripts (`scripts/`)
-- Documentation (README.md, CLAUDE.md)
+- Documentation (README.md, CLAUDE.template.md)
 
 **What NOT to commit:**
 - Personal configs (`config/*.yaml`)
+- Personal context (`CLAUDE.md`)
 - Pipeline folders (`1-capture/`, `2-research/`, `3-content/`, `4-archive/`)
 - System files (`system/`)
 - Local settings (`.claude/settings.local.json`)
@@ -538,3 +547,4 @@ When adding new config files:
 | 2.4 | 2026-01-10 | Unified output templates, source citation enforcement, JSON schema validation |
 | 2.5 | 2026-01-11 | Folder restructure: Pipeline-based numbering (1-capture, 2-research, 3-content, 4-archive) |
 | 2.6 | 2026-01-11 | Deep research: /deep-research command, --deep flag, /perplexity-budget, dynamic topic queries, two-tier budget system |
+| 2.7 | 2026-01-11 | Genericization: README and CLAUDE.template.md made domain-agnostic for any content creator |

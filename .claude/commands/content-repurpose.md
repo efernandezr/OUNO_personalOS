@@ -161,18 +161,22 @@ The content-agent returns:
 
 ### Step 7: Write Output Files (Orchestrator)
 
-Create output folder: `3-content/{YYYY-MM-DD}-{slug}/`
+Create output folders for each platform: `3-content/{platform}/{YYYY-MM-DD}-{slug}/`
 
 Generate slug from source title (lowercase, hyphens, max 50 chars)
 
-Write files:
+Write files to platform-specific folders:
 
 ```
-3-content/{date}-{slug}/
-├── summary.md          # Overview of all generated content
+3-content/linkedin/{date}-{slug}/
 ├── linkedin-v1.md      # First LinkedIn variation
 ├── linkedin-v2.md      # Second LinkedIn variation (if variations > 1)
-├── twitter-thread.md   # Twitter thread
+└── summary.md          # Overview of all generated content
+
+3-content/twitter/{date}-{slug}/
+└── twitter-thread.md   # Twitter thread
+
+3-content/newsletter/{date}-{slug}/
 └── newsletter-snippet.md  # Newsletter version
 ```
 
@@ -369,11 +373,15 @@ Before output, the agent verifies:
 ## Example Output Location
 
 ```
-3-content/2026-01-08-ai-agents-marketing/
-├── summary.md
+3-content/linkedin/2026-01-08-ai-agents-marketing/
 ├── linkedin-v1.md
 ├── linkedin-v2.md
-├── twitter-thread.md
+└── summary.md
+
+3-content/twitter/2026-01-08-ai-agents-marketing/
+└── twitter-thread.md
+
+3-content/newsletter/2026-01-08-ai-agents-marketing/
 └── newsletter-snippet.md
 ```
 

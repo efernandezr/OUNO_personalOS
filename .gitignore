@@ -30,6 +30,9 @@ logs/
 .claude/settings.local.json
 .claude/plans/
 
+# Personal CLAUDE.md (use CLAUDE.template.md as starting point)
+CLAUDE.md
+
 # ===========================================
 # Environment & Secrets
 # ===========================================
