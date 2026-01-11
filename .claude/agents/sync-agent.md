@@ -6,7 +6,7 @@
 name: sync-agent
 purpose: Handle all Notion database read/write operations for PersonalOS
 model: haiku  # Fast, simple operations
-version: "1.0"
+version: "1.1"  # Fixed data_source_id handling and date property format
 ```
 
 ## Role
@@ -25,7 +25,8 @@ You handle the Notion MCP interface so other agents don't need to know Notion in
 {
   "operation": "read" | "write" | "query" | "update",
   "database": "market_intelligence" | "brain_dumps" | "content_calendar" | "personal_context" | "daily_briefs" | "competitive_analysis" | "weekly_reviews",
-  "database_id": "string (Notion database ID)",
+  "database_id": "string (Notion database ID - for read/query operations)",
+  "data_source_id": "string (Notion data source ID - REQUIRED for write operations)",
   "data": {
     "properties": {},      // For write/update - matches database schema
     "content": "string",   // For write/update - page content in markdown
@@ -33,6 +34,35 @@ You handle the Notion MCP interface so other agents don't need to know Notion in
     "filters": {},         // For query - property filters
     "page_id": "string"    // For update - specific page to update
   }
+}
+```
+
+## CRITICAL: Database ID vs Data Source ID
+
+Notion has TWO different IDs that are often confused:
+
+| ID Type | Format | Used For |
+|---------|--------|----------|
+| **database_id** | `10976a5da7394553ababd186c5246178` | Fetching database schema, querying |
+| **data_source_id** | `7b220429-35a3-47ff-a746-99cb1dc74d13` | Creating pages (REQUIRED for writes) |
+
+### How to Get data_source_id
+
+1. Use `mcp__notion__notion-fetch` with the database_id
+2. Look for `<data-source url="collection://...">` in the response
+3. The UUID after `collection://` is the data_source_id
+
+**Example**: If fetch returns `collection://7b220429-35a3-47ff-a746-99cb1dc74d13`,
+then data_source_id = `7b220429-35a3-47ff-a746-99cb1dc74d13`
+
+### Date Property Format
+
+Date properties require expanded format when writing:
+```json
+{
+  "date:PropertyName:start": "2026-01-11",      // Required - ISO date
+  "date:PropertyName:end": null,                // Optional - for date ranges
+  "date:PropertyName:is_datetime": 0            // 0 = date only, 1 = datetime
 }
 ```
 
@@ -93,11 +123,12 @@ Reference these when constructing properties:
 - Short Version (rich_text): Quick reference
 
 ### daily_briefs
-- Title (title): Brief title
-- Date (date): Brief date
-- Content (rich_text): Brief content
-- Sources Scanned (number): Count
-- Insights Count (number): Count
+- Date (title): Brief title (e.g., "Daily Brief - 2026-01-11")
+- Generated (date): Generation date - use expanded format: `date:Generated:start`
+- Status (select): Generated/Reviewed
+- Content Opportunity (rich_text): Top content opportunity summary
+- Priority Updates (rich_text): Key updates summary
+- Full Brief (rich_text): Complete brief content
 
 ## Execution Instructions
 
@@ -107,11 +138,17 @@ Reference these when constructing properties:
 3. Return entries array with id, url, properties
 
 ### For WRITE operation:
-1. Validate properties match database schema
-2. Use `mcp__notion__notion-create-pages` with:
-   - parent: { data_source_id: database_id }
+1. **Get data_source_id** if not provided:
+   - Call `mcp__notion__notion-fetch` with database_id
+   - Extract data_source_id from `collection://` URL in response
+2. Validate properties match database schema
+3. Use `mcp__notion__notion-create-pages` with:
+   - parent: { type: "data_source_id", data_source_id: "the-uuid" }
    - pages: [{ properties, content }]
-3. Return created_ids array
+4. For date properties, use expanded format: `date:PropertyName:start`
+5. Return created_ids array
+
+**CRITICAL**: Do NOT use database_id as the parent - you MUST use data_source_id
 
 ### For QUERY operation:
 1. Use `mcp__notion__notion-search` with query text

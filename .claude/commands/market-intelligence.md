@@ -546,9 +546,13 @@ All sources referenced in this report:
 ### Step 7: Write Output Files (Orchestrator)
 
 1. Create output directory if needed: `2-research/market-briefs/`
-2. Write markdown to: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief.md`
+2. Write markdown to (choose based on `--deep` flag):
+   - **If `--deep` was used**: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief-deep-{topic-slug}.md`
+     - Example: `2026-01-10-1430-market-brief-deep-ai-agents.md`
+     - The `{topic-slug}` is the deep research topic in lowercase with spaces replaced by hyphens
+   - **Otherwise**: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief.md`
+     - Example: `2026-01-10-1430-market-brief.md`
    - Include timestamp (24h format) to preserve multiple scans per day
-   - Example: `2026-01-10-1430-market-brief.md`
 3. Write agent log to: `system/logs/{YYYY-MM-DD}-{HHMM}-intelligence-agent.json`
    - Include: input, output, timestamp, duration
 
@@ -773,9 +777,10 @@ Write errors to `system/logs/{YYYY-MM-DD}-market-intelligence-errors.json`:
 }
 ```
 
-## Example Output Location
+## Example Output Locations
 
-`2-research/market-briefs/2026-01-08-1430-market-brief.md`
+- Standard: `2-research/market-briefs/2026-01-08-1430-market-brief.md`
+- With `--deep`: `2-research/market-briefs/2026-01-08-1430-market-brief-deep-ai-agents.md`
 
 ## Performance Target
 
