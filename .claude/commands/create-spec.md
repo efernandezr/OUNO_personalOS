@@ -33,7 +33,7 @@ Convert to kebab-case if needed (spaces → hyphens, lowercase)
 ### 2. Create Spec Folder
 
 ```
-Create directory: specs/{feature-name}/
+Create directory: system/specs/{feature-name}/
 ```
 
 ### 3. Extract from Conversation
@@ -61,7 +61,7 @@ Analyze the current conversation to extract:
 
 ### 4. Create requirements.md
 
-Write `specs/{feature-name}/requirements.md`:
+Write `system/specs/{feature-name}/requirements.md`:
 
 ```markdown
 # Requirements: {Feature Name}
@@ -98,7 +98,7 @@ Write `specs/{feature-name}/requirements.md`:
 
 ### 5. Create implementation-plan.md
 
-Write `specs/{feature-name}/implementation-plan.md`:
+Write `system/specs/{feature-name}/implementation-plan.md`:
 
 ```markdown
 # Implementation Plan: {Feature Name}
@@ -148,7 +148,7 @@ Write `specs/{feature-name}/implementation-plan.md`:
 
 ### 6. Create action-required.md
 
-Write `specs/{feature-name}/action-required.md`:
+Write `system/specs/{feature-name}/action-required.md`:
 
 **If manual steps exist:**
 
@@ -189,7 +189,7 @@ All tasks can be implemented automatically.
 Display summary to user:
 
 ```
-Feature specification created at `specs/{feature-name}/`
+Feature specification created at `system/specs/{feature-name}/`
 
 Files created:
 - requirements.md - What and why

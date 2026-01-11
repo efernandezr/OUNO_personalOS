@@ -86,7 +86,4 @@ Desktop.ini
 # Personal roadmap and feature planning (now in system/planning/)
 planning/
 
-# Feature specs (now in system/specs/)
-specs/*/
-!specs/.gitkeep
 .mcp.json

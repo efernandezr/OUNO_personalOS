@@ -85,7 +85,7 @@ When planning improvements to PersonalOS, use this workflow:
 
 1. Enter planning mode to design the feature/improvement
 2. Run `/create-spec {feature-name}` to capture the conversation
-3. Review the generated specs in `specs/{feature-name}/`
+3. Review the generated specs in `system/specs/{feature-name}/`
 4. Implement using the task checklist
 
 ### Spec Structure

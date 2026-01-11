@@ -343,7 +343,7 @@ Create a feature specification from a planning conversation.
 # After a planning conversation
 /create-spec my-new-feature
 
-# Creates specs/my-new-feature/ with:
+# Creates system/specs/my-new-feature/ with:
 # - requirements.md
 # - implementation-plan.md
 # - action-required.md
