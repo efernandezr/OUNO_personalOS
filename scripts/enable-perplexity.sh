@@ -138,13 +138,13 @@ if [[ -f "config/research.yaml" ]]; then
 fi
 
 # Create cache directory structure
-mkdir -p outputs/cache/perplexity/queries
-mkdir -p outputs/cache/perplexity/sources
+mkdir -p system/cache/perplexity/queries
+mkdir -p system/cache/perplexity/sources
 echo -e "${GREEN}  ✓ Created cache directories${NC}"
 
 # Create initial usage tracker
-if [[ ! -f "outputs/cache/perplexity/usage.yaml" ]]; then
-    cat > "outputs/cache/perplexity/usage.yaml" << EOF
+if [[ ! -f "system/cache/perplexity/usage.yaml" ]]; then
+    cat > "system/cache/perplexity/usage.yaml" << EOF
 # Perplexity API Usage Tracking
 # Auto-updated by intelligence-agent
 

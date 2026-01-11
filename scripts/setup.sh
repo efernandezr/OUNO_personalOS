@@ -43,7 +43,7 @@ echo ""
 echo -e "${YELLOW}Step 2: Creating directory structure...${NC}"
 
 # Create necessary directories
-dirs=("brain-dumps" "outputs/intelligence" "outputs/content" "outputs/analysis" "outputs/daily" "outputs/competitive" "outputs/dashboards" "inputs/samples/linkedin-posts" "inputs/samples/newsletter-samples" "inputs/pdfs" "logs" "archive")
+dirs=("1-capture/brain-dumps" "1-capture/voice-samples/linkedin-posts" "1-capture/voice-samples/newsletter-samples" "1-capture/documents" "2-research/market-briefs" "2-research/daily-briefs" "2-research/analysis" "2-research/competitive" "2-research/dashboards" "3-content/linkedin" "3-content/twitter" "3-content/newsletter" "4-archive" "system/logs" "system/cache" "system/specs" "system/planning")
 
 for dir in "${dirs[@]}"; do
     if [ ! -d "$dir" ]; then

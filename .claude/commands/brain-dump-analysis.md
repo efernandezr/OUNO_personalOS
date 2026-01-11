@@ -47,7 +47,6 @@ Orchestrator (this command)     →     Agents
 10. Format markdown
 11. Write files
 12. Mark Notion processed        →    sync-agent (update)
-13. Update STATUS.md
 ```
 
 ## Execution Steps
@@ -268,12 +267,6 @@ Task tool call:
       }
       ```
 ```
-
-### Step 10: Update STATUS.md (Orchestrator)
-
-1. Set **Last Command** to `/brain-dump-analysis`
-2. Set **Last Output** to output file path
-3. Add entry to **Activity Log** with summary
 
 ## Agent Reference
 

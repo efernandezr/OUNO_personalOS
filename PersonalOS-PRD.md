@@ -40,7 +40,7 @@ Before diving into the details, here's what you'll need to do:
 - [ ] Initialize with file structure (see Section 9)
 - [ ] Configure `config/topics.yaml` with your topics
 - [ ] Configure `config/sources.yaml` with your sources
-- [ ] Add 10+ content samples to `inputs/samples/` for voice calibration
+- [ ] Add 10+ content samples to `1-capture/voice-samples/` for voice calibration
 - [ ] Run `/voice-calibrate` to build your voice profile
 
 ### Test
@@ -403,7 +403,7 @@ sources:
 ```
 
 **Output Destinations**:
-- Local: `outputs/intelligence/{date}-market-brief.md`
+- Local: `2-research/market-briefs/{date}-market-brief.md`
 - Notion: "Market Intelligence" database
 
 **Sub-Agent Used**: `intelligence-researcher`
@@ -478,7 +478,7 @@ competitors:
 ```
 
 **Output Destinations**:
-- Local: `outputs/competitive/{date}-analysis.md`
+- Local: `2-research/competitive/{date}-analysis.md`
 - Notion: "Competitive Intelligence" database
 
 **Sub-Agent Used**: `competitive-analyst`
@@ -530,7 +530,7 @@ include_hooks: bool      # Generate attention hooks (default: true)
 ```
 
 **Output Destinations**:
-- Local: `outputs/content/{date}-{source-slug}/`
+- Local: `3-content/{date}-{source-slug}/`
 - Notion: "Content Calendar" database (as draft entries)
 
 **Sub-Agent Used**: `content-creator`
@@ -593,7 +593,7 @@ sources:
 ```
 
 **Output Destinations**:
-- Local: `outputs/analysis/{date}-brain-analysis.md`
+- Local: `2-research/analysis/{date}-brain-analysis.md`
 - Notion: "Content Ideas" database (creates entries for each pillar)
 
 **Sub-Agent Used**: `pattern-analyst`
@@ -642,7 +642,7 @@ brief_length: string     # "quick" | "standard" | "comprehensive" (default: "sta
 ```
 
 **Output Destinations**:
-- Local: `outputs/daily/{date}-brief.md`
+- Local: `2-research/daily-briefs/{date}-brief.md`
 - Notion: "Daily Briefs" database
 
 **Sub-Agent Used**: `intelligence-researcher` (reuses market-intel)
@@ -711,7 +711,7 @@ questions:
 ```
 
 **Output Destinations**:
-- Local: `outputs/dashboards/{year}-W{week}.md`
+- Local: `2-research/dashboards/{year}-W{week}.md`
 - Notion: "Weekly Reviews" database
 
 **Sub-Agent Used**: `metrics-analyst`
@@ -857,7 +857,7 @@ tools_allowed:
   - file_read
   - file_write
 
-output_location: "outputs/intelligence/"
+output_location: "2-research/market-briefs/"
 ```
 
 #### 6.2.2 Competitive Analyst
@@ -897,7 +897,7 @@ tools_allowed:
   - notion_read
   - file_write
 
-output_location: "outputs/competitive/"
+output_location: "2-research/competitive/"
 ```
 
 #### 6.2.3 Content Creator
@@ -942,7 +942,7 @@ tools_allowed:
   - notion_read
   - file_write
 
-output_location: "outputs/content/"
+output_location: "3-content/"
 ```
 
 #### 6.2.4 Pattern Analyst
@@ -982,7 +982,7 @@ tools_allowed:
   - notion_read
   - file_write
 
-output_location: "outputs/analysis/"
+output_location: "2-research/analysis/"
 ```
 
 #### 6.2.5 Metrics Analyst
@@ -1023,7 +1023,7 @@ tools_allowed:
   - file_read
   - file_write
 
-output_location: "outputs/dashboards/"
+output_location: "2-research/dashboards/"
 ```
 
 ---
@@ -1403,7 +1403,7 @@ All commands and sub-agents use **relative paths**:
 ```yaml
 # ✅ CORRECT - Relative paths
 input_path: "./brain-dumps/"
-output_path: "./outputs/intelligence/"
+output_path: "./2-research/market-briefs/"
 config_path: "./config/topics.yaml"
 
 # ❌ WRONG - Absolute paths (not portable)
@@ -1612,16 +1612,16 @@ See `sub-agents/` directory for detailed specifications.
 
 ### Input Locations
 - Brain dumps: `brain-dumps/YYYY-MM/`
-- Voice samples: `inputs/samples/`
+- Voice samples: `1-capture/voice-samples/`
 - PDFs: `inputs/pdfs/`
 
 ### Output Locations
-- Intelligence: `outputs/intelligence/`
-- Competitive: `outputs/competitive/`
-- Content: `outputs/content/{date}-{slug}/`
-- Analysis: `outputs/analysis/`
-- Dashboards: `outputs/dashboards/`
-- Daily: `outputs/daily/`
+- Intelligence: `2-research/market-briefs/`
+- Competitive: `2-research/competitive/`
+- Content: `3-content/{date}-{slug}/`
+- Analysis: `2-research/analysis/`
+- Dashboards: `2-research/dashboards/`
+- Daily: `2-research/daily-briefs/`
 
 ### Naming Conventions
 - Files: `YYYY-MM-DD-{descriptor}.md`
@@ -2172,7 +2172,7 @@ Collect 10+ pieces of your best content:
 
 ### Step 2: Run Calibration
 ```
-/voice-calibrate --sources inputs/samples/ --platforms linkedin,newsletter
+/voice-calibrate --sources 1-capture/voice-samples/ --platforms linkedin,newsletter
 ```
 
 ### Step 3: Review Output

@@ -27,7 +27,7 @@ perplexity:
   cache:
     enabled: true
     ttl_hours: 24                 # Cache validity period
-    location: "outputs/cache/perplexity/"
+    location: "system/cache/perplexity/"
 
   # Model Selection (cost optimization)
   # sonar = cheapest, sonar-pro = better synthesis

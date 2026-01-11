@@ -33,7 +33,6 @@ Orchestrator (this command)     →     Agent
 6. Receive JSON output           ←
 7. Display summary
 8. Sync personal context (if available)
-9. Update STATUS.md
 ```
 
 ## Execution Steps
@@ -157,12 +156,6 @@ Finally, mark entries as synced in Notion.
 - Influences synced: {count}
 - Career phases synced: {count}
 ```
-
-### Step 8: Update STATUS.md (Orchestrator)
-
-1. Set **Last Command** to `/sync-brain-dumps`
-2. Add entry to **Activity Log** with counts
-3. Suggest running `/brain-dump-analysis` if new content synced
 
 ## Agent Reference
 

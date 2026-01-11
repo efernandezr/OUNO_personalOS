@@ -18,17 +18,6 @@ You are the orchestration agent for **PersonalOS**, an AI-powered personal brand
 - **Proactive intelligence**: Surface insights even when not asked
 - **Structured outputs**: Maintain consistent formatting
 
-### Quick Context Restoration
-
-After `/clear` or starting a new session, **read `STATUS.md` first** for instant project state:
-- Last command executed and output location
-- What's working vs pending
-- Recent activity log
-- Config summaries
-- Suggested next actions
-
-If STATUS.md seems stale, run `/sync-status` to rebuild it from project state.
-
 ---
 
 ## User Context
@@ -68,7 +57,6 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 ### Utility Commands
 - `/add-source` - Add new sources to monitoring configuration
 - `/add-story` - Add personal stories and experiences to context
-- `/sync-status` - Rebuild STATUS.md from project state
 - `/sync-brain-dumps` - Pull brain dumps and personal context from Notion
 - `/checkpoint` - Create a git checkpoint commit with all changes
 - `/voice-calibrate` - Calibrate voice profile from writing samples
@@ -146,7 +134,7 @@ Task tool call:
 
 ### Agent Logs
 
-All agent invocations are logged to `outputs/logs/{date}-{agent}.json` for debugging and improvement.
+All agent invocations are logged to `system/logs/{date}-{agent}.json` for debugging and improvement.
 
 ### Legacy Sub-Agents
 
@@ -383,8 +371,8 @@ PersonalOS can use Perplexity for real-time discovery:
 - **New source identification**
 
 **Tools**:
-- `mcp__perplexity__perplexity_search` - Breaking news queries (sonar model)
-- `mcp__perplexity__perplexity_ask` - Trend synthesis (sonar-pro model)
+- `mcp__perplexity__search` - Breaking news queries (sonar model)
+- `mcp__perplexity__reason` - Trend synthesis (sonar-pro model)
 
 **Configuration**: `config/research.yaml` (default $25/month budget)
 
@@ -426,7 +414,7 @@ When Perplexity is not configured or unavailable:
 
 ### Budget Tracking
 
-- Usage tracked in `outputs/cache/perplexity/usage.yaml`
+- Usage tracked in `system/cache/perplexity/usage.yaml`
 - Alerts at 80% budget usage
 - Hard stop when budget exceeded
 - Cache (24h TTL) reduces API calls
@@ -452,9 +440,9 @@ PersonalOS uses a **template-based sharing** approach:
 Tracked (Framework)          Gitignored (Personal)
 ─────────────────────        ────────────────────
 config/templates/*.yaml  →   config/*.yaml
-CLAUDE.md, README.md         outputs/
-.claude/commands/            brain-dumps/
-.claude/agents/              logs/
+CLAUDE.md, README.md         1-capture/, 2-research/
+.claude/commands/            3-content/, 4-archive/
+.claude/agents/              system/
 scripts/                     .claude/settings.local.json
 ```
 
@@ -478,8 +466,8 @@ When contributing to the framework:
 
 **What NOT to commit:**
 - Personal configs (`config/*.yaml`)
-- Generated outputs (`outputs/`)
-- Personal notes (`brain-dumps/`)
+- Pipeline folders (`1-capture/`, `2-research/`, `3-content/`, `4-archive/`)
+- System files (`system/`)
 - Local settings (`.claude/settings.local.json`)
 
 ### Git Workflow
@@ -524,12 +512,12 @@ When adding new config files:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-01-06 | Initial PersonalOS setup |
-| 1.1 | 2026-01-06 | Added STATUS.md and /sync-status for quick context restoration |
-| 1.2 | 2026-01-06 | Added /sync-brain-dumps; brain-dump-analysis now reads from Notion |
-| 1.3 | 2026-01-07 | Added personal-context.yaml, /add-story, Notion sync for personal context |
-| 1.4 | 2026-01-08 | Git setup: templates, .gitignore, setup.sh, MIT license, collaboration docs |
+| 1.1 | 2026-01-06 | Added /sync-brain-dumps; brain-dump-analysis now reads from Notion |
+| 1.2 | 2026-01-07 | Added personal-context.yaml, /add-story, Notion sync for personal context |
+| 1.3 | 2026-01-08 | Git setup: templates, .gitignore, setup.sh, MIT license, collaboration docs |
 | 2.0 | 2026-01-08 | Operative agents: Task tool delegation, .claude/agents/, JSON output schemas |
 | 2.1 | 2026-01-08 | Voice calibration: /voice-calibrate, sample infrastructure, JSON validation, retry logic, personal context guide |
 | 2.2 | 2026-01-10 | Spec creation: /create-spec command, specs/ folder, improvement workflow |
 | 2.3 | 2026-01-10 | Perplexity integration: Real-time intelligence, breaking news, trend discovery, source auto-discovery |
 | 2.4 | 2026-01-10 | Unified output templates, source citation enforcement, JSON schema validation |
+| 2.5 | 2026-01-11 | Removed STATUS.md and /sync-status for simplicity (two-file system) |

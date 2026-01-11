@@ -105,4 +105,4 @@ calibration:
     - "linkedin-posts"
     - "newsletter-samples"
   last_samples: []
-  improvement_notes: "Add actual content samples to inputs/samples/ and run /voice-calibrate"
+  improvement_notes: "Add actual content samples to 1-capture/voice-samples/ and run /voice-calibrate"

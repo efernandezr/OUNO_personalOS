@@ -38,38 +38,44 @@ Scan configured sources for AI marketing insights, trends, and developments.
 
 This command uses **Task tool delegation** to the `intelligence-agent`.
 
+**IMPORTANT**: Perplexity calls are made at the orchestrator level (not in sub-agent) because sub-agents don't have MCP access.
+
 ```
 Orchestrator (this command)     →     intelligence-agent
 ─────────────────────────────────────────────────────────
 1. Parse parameters (incl. --no-real-time)
 2. Load configs (topics, sources, research)
 3. Filter sources by depth
-4. Construct agent input
-                                 →    5. Phase 0: Config check
-                                 →    6. Phase 1: Real-time discovery (Perplexity)
-                                 →    7. Phase 2: Scan sources (Firecrawl)
-                                 →    8. Phase 3: Synthesis
-                                 →    9. Return JSON
-10. Receive JSON output          ←
-11. Format markdown (incl. Real-Time Intelligence)
-12. Write files
-13. Auto-add discovered sources
-14. Sync to Notion (sync-agent)
-15. Update STATUS.md
+4. CHECK PERPLEXITY CACHE (orchestrator)
+5. CALL PERPLEXITY MCP (orchestrator, if cache miss)
+6. WRITE CACHE + UPDATE USAGE (orchestrator)
+7. Construct agent input (incl. perplexity_results)
+                                 →    8. Use pre-fetched Perplexity results
+                                 →    9. Scan sources (Firecrawl only)
+                                 →    10. Synthesis
+                                 →    11. Return JSON
+12. Receive JSON output          ←
+13. Format markdown (incl. Real-Time Intelligence)
+14. Write files
+15. Auto-add discovered sources
+16. Sync to Notion (sync-agent)
 ```
 
 ## Tool Enforcement
 
-When invoking the intelligence-agent via Task tool:
-- **Perplexity MCP** for real-time discovery (if configured and enabled)
+**At Orchestrator Level** (this command):
+- **Perplexity MCP** for real-time discovery (called directly by orchestrator, NOT sub-agent)
+- Cache read/write operations
+- Usage tracking updates
+
+**At Agent Level** (intelligence-agent):
 - **Firecrawl MCP is REQUIRED** for web scraping (`mcp__firecrawl__firecrawl_scrape`)
 - **WebSearch is NOT acceptable** as the primary scanning tool
 - The agent MUST track tool usage in `scan_metadata` output field
-- If `degraded_mode: true` in output, surface this warning to user
-- If `real_time_intelligence.status` is not "success", surface the reason to user
+- Agent receives pre-fetched Perplexity results - should NOT call Perplexity MCP
 
 Include this reminder in the agent prompt:
-> "CRITICAL: Use Firecrawl MCP for all web scraping. Use Perplexity for discovery if configured. See Tool Selection Rules in agent definition."
+> "CRITICAL: Use Firecrawl MCP for all web scraping. Perplexity results are pre-fetched - use them directly, do NOT call Perplexity MCP."
 
 ## Execution Steps
 
@@ -83,33 +89,102 @@ Read these config files:
   - If file doesn't exist, set `perplexity_enabled: false`
   - Extract: `enabled`, `budget.monthly_limit_usd`, `cache.ttl_hours`, `queries.max_queries_per_market_intel`
 
-### Step 2: Prepare Agent Input (Orchestrator)
+### Step 2: Filter Sources (Orchestrator)
 
 Filter sources by depth parameter:
 - `quick`: Only sources where priority == "high" (max 5)
 - `standard`: Sources where priority in ["high", "medium"]
 - `deep`: All sources
 
-Construct input JSON:
+### Step 2.5: Real-Time Discovery (Orchestrator) - PERPLEXITY
+
+**CRITICAL**: This step runs at orchestrator level because sub-agents don't have MCP access.
+
+Skip this step if:
+- `--no-real-time` flag is set
+- `research.yaml` doesn't exist or `perplexity.enabled: false`
+- Budget exceeded (check `usage.yaml`)
+
+#### 2.5.1: Check Cache
+
+1. Generate cache key: `{YYYY-MM-DD}-{depth}-market-intel`
+2. Check for file: `system/cache/perplexity/queries/{cache_key}.json`
+3. If file exists AND timestamp < `cache_ttl_hours` old AND NOT `--force-fresh`:
+   - Read cached results
+   - Set `from_cache: true`
+   - Skip to Step 2.5.4
+
+#### 2.5.2: Call Perplexity MCP (if cache miss)
+
+**Breaking News Query** (use `mcp__perplexity__search`):
+```
+Query: "Latest AI marketing news announcements {current_month} {current_year}"
+```
+
+**Trend Discovery Query** (use `mcp__perplexity__reason` for standard/deep only):
+```
+Query: "What are the emerging trends in AI for marketing and enterprise AI agents in {current_month} {current_year}?"
+```
+
+Extract from responses:
+- `breaking_news[]` - Title, summary, source URLs from citations
+- `trend_signals[]` - Trend name, evidence count, trajectory
+
+#### 2.5.3: Write Cache + Update Usage
+
+1. Write results to `system/cache/perplexity/queries/{cache_key}.json`:
+```json
+{
+  "timestamp": "{ISO timestamp}",
+  "ttl_hours": 24,
+  "query_type": "market-intelligence",
+  "depth": "{depth}",
+  "results": {
+    "breaking_news": [...],
+    "trend_signals": [...]
+  }
+}
+```
+
+2. Update `system/cache/perplexity/usage.yaml`:
+```yaml
+current_month: "{YYYY-MM}"
+queries_count: {increment by queries used}
+estimated_cost_usd: {add ~$0.005 per search, ~$0.02 per ask}
+last_updated: "{ISO timestamp}"
+budget_exceeded: {true if estimated_cost >= budget_limit}
+```
+
+#### 2.5.4: Prepare Perplexity Results for Agent
+
+```json
+{
+  "perplexity_results": {
+    "status": "success" | "from_cache" | "skipped" | "budget_exceeded" | "not_configured",
+    "breaking_news": [...],
+    "trend_signals": [...],
+    "queries_used": 0,
+    "from_cache": true | false,
+    "budget_remaining_pct": 85
+  }
+}
+```
+
+### Step 3: Construct Agent Input (Orchestrator)
+
 ```json
 {
   "mode": "full",
   "timeframe": "{from parameter or '48h'}",
   "depth": "{from parameter or 'standard'}",
-  "no_real_time": "{true if --no-real-time flag set, else false}",
-  "force_fresh": "{true if --force-fresh flag set, else false}",
+  "today_date": "{YYYY-MM-DD}",
   "topics": [/* from topics.yaml */],
   "sources": [/* filtered from sources.yaml */],
-  "research_config": {
-    "perplexity_enabled": "{from research.yaml or false}",
-    "budget_limit_usd": "{from research.yaml or 25.00}",
-    "cache_ttl_hours": "{from research.yaml or 24}",
-    "max_queries": "{from research.yaml or 5}"
-  }
+  "perplexity_results": {/* from Step 2.5, or null if skipped */}
 }
 ```
 
-### Step 3: Invoke Intelligence Agent (Task Tool)
+### Step 4: Invoke Intelligence Agent (Task Tool)
 
 ```
 Task tool call:
@@ -126,13 +201,17 @@ Task tool call:
       Execute a market intelligence scan with this input:
 
       ```json
-      {input JSON from Step 2}
+      {input JSON from Step 3, including perplexity_results}
       ```
+
+      **NOTE**: Perplexity results have been pre-fetched by the orchestrator.
+      Use the provided `perplexity_results` directly - do NOT call Perplexity MCP.
+      Focus on Firecrawl scraping of configured sources and synthesis.
 
       Return your response as valid JSON matching the output schema in the agent definition.
 ```
 
-### Step 4: Process Agent Output (Orchestrator)
+### Step 5: Process Agent Output (Orchestrator)
 
 The agent returns JSON with:
 - `real_time_intelligence` - Perplexity results (if enabled)
@@ -148,7 +227,7 @@ The agent returns JSON with:
 - `sources_failed[]` - URLs that failed
 - `scan_metadata` - Tool usage tracking (verify `primary_tool: "firecrawl"`)
 
-### Step 5: Format Markdown Output (Orchestrator)
+### Step 6: Format Markdown Output (Orchestrator)
 
 Transform JSON into markdown format:
 
@@ -270,7 +349,7 @@ All sources referenced in this report:
 *Generated by PersonalOS | intelligence-agent | {date}*
 ```
 
-### Step 6: Write Output Files (Orchestrator)
+### Step 7: Write Output Files (Orchestrator)
 
 1. Create output directory if needed: `2-research/market-briefs/`
 2. Write markdown to: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief.md`
@@ -279,7 +358,7 @@ All sources referenced in this report:
 3. Write agent log to: `system/logs/{YYYY-MM-DD}-{HHMM}-intelligence-agent.json`
    - Include: input, output, timestamp, duration
 
-### Step 6.5: Process Discovered Sources (Orchestrator)
+### Step 7.5: Process Discovered Sources (Orchestrator)
 
 If `real_time_intelligence.sources_discovered` contains entries with `action: "added"`:
 
@@ -299,7 +378,7 @@ If `real_time_intelligence.sources_discovered` contains entries with `action: "a
 3. Write updated sources.yaml
 4. Log additions to output
 
-### Step 7: Sync to Notion (Orchestrator → sync-agent)
+### Step 8: Sync to Notion (Orchestrator → sync-agent)
 
 For each insight where priority == "High":
 
@@ -337,16 +416,6 @@ Task tool call:
       }
       ```
 ```
-
-### Step 8: Update STATUS.md (Orchestrator)
-
-1. Set **Last Command** to `/market-intelligence`
-2. Set **Last Output** to `2-research/market-briefs/{date}-market-brief.md`
-3. Add entry to **Activity Log** table:
-   - Date: Current date
-   - Command: /market-intelligence
-   - Output: 2-research/market-briefs/{date}-market-brief.md
-   - Notes: Summary (e.g., "Standard scan, {sources_scanned} sources, {insights.length} insights")
 
 ## Agent Reference
 
@@ -475,7 +544,6 @@ If sync-agent fails after retries:
 2. Add note to output:
 ```markdown
 **Notion Sync**: ❌ Failed after 3 retries. Saved locally only.
-Run `/sync-status` later to retry sync.
 ```
 3. Log sync failure to `system/logs/{date}-sync-errors.json`
 

@@ -122,15 +122,3 @@ competitors:
 - Update the `last_updated` field in the config file
 - For competitors, default to tier_2 unless specified
 
-## Post-Execution: Update STATUS.md
-
-After completing this command, update `STATUS.md`:
-1. Set **Last Command** to `/add-source`
-2. Set **Last Output** to `N/A (config update)`
-3. Add entry to **Activity Log** table:
-   - Date: Current date
-   - Command: /add-source
-   - Output: config/{sources or competitors}.yaml
-   - Notes: Summary (e.g., "Added 'AI Maker Newsletter' to sources")
-4. Update **Config Summaries** section with new counts
-5. Rotate out activity log entries older than 30 days

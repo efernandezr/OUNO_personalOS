@@ -100,12 +100,6 @@ EOF
 )"
 ```
 
-### 6. Post-Commit (Optional)
-
-After committing, consider:
-- Update `STATUS.md` if significant changes were made
-- Run `/sync-status` to refresh project state
-
 ## Important Notes
 
 - **Include everything**: Don't skip files - this is a checkpoint

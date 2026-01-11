@@ -390,7 +390,6 @@ PersonalOS uses a **numbered pipeline structure** for clear content flow:
 PersonalOS/
 ├── CLAUDE.md                    # Main context file for Claude
 ├── README.md                    # This file
-├── STATUS.md                    # Current project state
 │
 ├── 1-capture/                   # RAW INPUTS - where ideas enter
 │   ├── brain-dumps/             # Notes synced from Notion

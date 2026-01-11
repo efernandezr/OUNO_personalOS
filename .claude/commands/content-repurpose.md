@@ -16,7 +16,7 @@ Transform existing content into platform-optimized formats while preserving auth
 
 ### Required
 - `<source>`: Path to source content OR Notion page URL
-  - Local file: `outputs/intelligence/2026-01-06-market-brief.md`
+  - Local file: `2-research/market-briefs/2026-01-06-market-brief.md`
   - Notion page: `https://notion.so/...`
 
 ### Optional
@@ -51,7 +51,6 @@ Orchestrator (this command)     →     Agents
 9. Receive JSON output           ←
 10. Write individual files
 11. Sync to content_calendar     →    sync-agent (write)
-12. Update STATUS.md
 ```
 
 ## Execution Steps
@@ -335,12 +334,6 @@ Task tool call:
       }
       ```
 ```
-
-### Step 10: Update STATUS.md (Orchestrator)
-
-1. Set **Last Command** to `/content-repurpose`
-2. Set **Last Output** to the output folder path
-3. Add entry to **Activity Log** with counts
 
 ## Agent Reference
 

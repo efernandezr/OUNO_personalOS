@@ -33,39 +33,46 @@ Generate a personalized daily briefing combining market intelligence with priori
 
 This command uses **Task tool delegation** to the `intelligence-agent` in quick mode.
 
+**IMPORTANT**: Perplexity calls are made at the orchestrator level (not in sub-agent) because sub-agents don't have MCP access.
+
 ```
 Orchestrator (this command)     →     intelligence-agent
 ─────────────────────────────────────────────────────────
 1. Parse parameters (incl. --no-real-time)
 2. Load configs (topics, sources, research)
 3. Filter high-priority sources only
-4. Construct quick-mode input
-                                 →    5. Phase 0: Config check
-                                 →    6. Phase 1: Breaking news (Perplexity, max 2 queries)
-                                 →    7. Phase 2: Quick scan (Firecrawl)
-                                 →    8. Phase 3: Synthesis
-                                 →    9. Return JSON
-10. Receive JSON output          ←
-11. Query Notion todos (optional)
-12. Generate content opportunity
-13. Format brief markdown (incl. What's Breaking)
-14. Write files
-15. Sync to Notion (sync-agent)
-16. Update STATUS.md
+4. CHECK PERPLEXITY CACHE (orchestrator)
+5. CALL PERPLEXITY MCP (orchestrator, max 2 queries if cache miss)
+6. WRITE CACHE + UPDATE USAGE (orchestrator)
+7. Construct quick-mode input (incl. perplexity_results)
+                                 →    8. Use pre-fetched Perplexity results
+                                 →    9. Quick scan (Firecrawl only)
+                                 →    10. Synthesis
+                                 →    11. Return JSON
+12. Receive JSON output          ←
+13. Query Notion todos (optional)
+14. Generate content opportunity
+15. Format brief markdown (incl. What's Breaking)
+16. Write files
+17. Sync to Notion (sync-agent)
 ```
 
 ## Tool Enforcement
 
-When invoking the intelligence-agent via Task tool:
-- **Perplexity MCP** for breaking news discovery (if configured and enabled)
+**At Orchestrator Level** (this command):
+- **Perplexity MCP** for breaking news (called directly by orchestrator, NOT sub-agent)
+- Max 2 queries for daily brief (lighter than market-intelligence)
+- Cache read/write operations
+- Usage tracking updates
+
+**At Agent Level** (intelligence-agent):
 - **Firecrawl MCP is REQUIRED** for web scraping (`mcp__firecrawl__firecrawl_scrape`)
 - **WebSearch is NOT acceptable** as the primary scanning tool
 - The agent MUST track tool usage in `scan_metadata` output field
-- If `degraded_mode: true` in output, surface this warning to user
-- If `real_time_intelligence.status` is not "success", surface the reason to user
+- Agent receives pre-fetched Perplexity results - should NOT call Perplexity MCP
 
 Include this reminder in the agent prompt:
-> "CRITICAL: Use Firecrawl MCP for all web scraping. Use Perplexity for breaking news if configured (max 2 queries). See Tool Selection Rules in agent definition."
+> "CRITICAL: Use Firecrawl MCP for all web scraping. Perplexity results are pre-fetched - use them directly, do NOT call Perplexity MCP."
 
 ## Execution Steps
 
@@ -79,6 +86,56 @@ Read these config files:
 - `config/research.yaml` - Get Perplexity settings (if exists)
   - If file doesn't exist, set `perplexity_enabled: false`
   - Extract: `enabled`, `budget.monthly_limit_usd`, `cache.ttl_hours`, `queries.max_queries_per_daily_brief`
+
+### Step 1.5: Breaking News Discovery (Orchestrator) - PERPLEXITY
+
+**CRITICAL**: This step runs at orchestrator level because sub-agents don't have MCP access.
+
+Skip this step if:
+- `--no-real-time` flag is set
+- `research.yaml` doesn't exist or `perplexity.enabled: false`
+- Budget exceeded (check `usage.yaml`)
+
+#### 1.5.1: Check Cache
+
+1. Generate cache key: `{YYYY-MM-DD}-quick-daily-brief`
+2. Check for file: `system/cache/perplexity/queries/{cache_key}.json`
+3. If file exists AND timestamp < `cache_ttl_hours` old AND NOT `--force-fresh`:
+   - Read cached results
+   - Set `from_cache: true`
+   - Skip to Step 1.5.4
+
+#### 1.5.2: Call Perplexity MCP (if cache miss)
+
+**Breaking News Query** (use `mcp__perplexity__search`):
+```
+Query: "Breaking AI marketing news today {current_date}"
+```
+
+Max 1-2 queries only (lighter than /market-intelligence).
+
+Extract from response:
+- `breaking_news[]` - Title, summary, source URLs from citations
+
+#### 1.5.3: Write Cache + Update Usage
+
+1. Write results to `system/cache/perplexity/queries/{cache_key}.json`
+2. Update `system/cache/perplexity/usage.yaml` (increment queries_count)
+
+#### 1.5.4: Prepare Perplexity Results for Agent
+
+```json
+{
+  "perplexity_results": {
+    "status": "success" | "from_cache" | "skipped" | "budget_exceeded" | "not_configured",
+    "breaking_news": [...],
+    "trend_signals": [],
+    "queries_used": 1,
+    "from_cache": true | false,
+    "budget_remaining_pct": 90
+  }
+}
+```
 
 ### Step 2: Invoke Intelligence Agent - Quick Mode (Task Tool)
 
@@ -101,20 +158,16 @@ Task tool call:
         "mode": "quick",
         "timeframe": "24h",
         "depth": "quick",
-        "no_real_time": "{true if --no-real-time flag set, else false}",
-        "force_fresh": "{true if --force-fresh flag set, else false}",
+        "today_date": "{YYYY-MM-DD}",
         "topics": [/* from topics.yaml - primary only */],
         "sources": [/* from sources.yaml - high priority only, max 5 */],
-        "research_config": {
-          "perplexity_enabled": "{from research.yaml or false}",
-          "budget_limit_usd": "{from research.yaml or 25.00}",
-          "cache_ttl_hours": "{from research.yaml or 24}",
-          "max_queries": "{from research.yaml queries.max_queries_per_daily_brief or 2}"
-        }
+        "perplexity_results": {/* from Step 1.5, or null if skipped */}
       }
       ```
 
-      CRITICAL: Use Perplexity for breaking news if configured (max 2 queries). Use Firecrawl MCP for all web scraping.
+      **NOTE**: Perplexity results have been pre-fetched by the orchestrator.
+      Use the provided `perplexity_results` directly - do NOT call Perplexity MCP.
+      Focus on Firecrawl scraping and synthesis.
 
       Return valid JSON matching output schema. Target 5-7 insights max.
 ```
@@ -277,12 +330,6 @@ Task tool call:
       }
       ```
 ```
-
-### Step 8: Update STATUS.md (Orchestrator)
-
-1. Set **Last Command** to `/daily-brief`
-2. Set **Last Output** to `2-research/daily-briefs/{date}-brief.md`
-3. Add entry to **Activity Log**
 
 ## Agent Reference
 

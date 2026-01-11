@@ -52,7 +52,6 @@ Orchestrator (this command)     →     Agents
 10. If approved: Update voice-profile.yaml
 11. Generate calibration report
 12. Update .metadata.yaml with history
-13. Update STATUS.md
 ```
 
 ## Execution Steps
@@ -368,13 +367,6 @@ calibration_history:
       - "{description of change 1}"
       - "{description of change 2}"
 ```
-
-### Step 12: Update STATUS.md (Orchestrator)
-
-1. Set **Last Command** to `/voice-calibrate`
-2. Set **Last Output** to the calibration report path
-3. Add entry to **Activity Log**
-4. Update **Voice Profile** status in Config Summary
 
 ## Agent Reference
 

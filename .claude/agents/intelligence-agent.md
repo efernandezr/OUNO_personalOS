@@ -6,21 +6,13 @@
 name: intelligence-agent
 purpose: Scan, filter, and synthesize market intelligence from configured sources
 model: sonnet  # Complex synthesis requires strong reasoning
-version: "2.0"  # Added Perplexity integration
+version: "2.1"  # Perplexity pre-fetched by orchestrator (cache fix)
 ```
 
 ## CRITICAL: Tool Selection Rules
 
-### Real-Time Discovery (Perplexity MCP)
-**When Perplexity is configured and enabled**:
-- `mcp__perplexity__perplexity_search` - Breaking news discovery (sonar model)
-- `mcp__perplexity__perplexity_ask` - Trend synthesis queries (sonar-pro model)
-
-**Skip Perplexity when**:
-- `--no-real-time` flag is passed
-- Budget limit exceeded (check `outputs/cache/perplexity/usage.yaml`)
-- Perplexity not configured (graceful fallback)
-- Cache hit exists within TTL
+### Perplexity Results (Pre-Fetched)
+**DO NOT call Perplexity MCP tools.** Results are pre-fetched by the orchestrator and passed in `perplexity_results` input field.
 
 ### Content Extraction (Firecrawl MCP)
 **MANDATORY**: You MUST use Firecrawl MCP tools for ALL deep content extraction:
@@ -34,24 +26,20 @@ version: "2.0"  # Added Perplexity integration
 ### Tool Priority Order
 
 ```
-Phase 0: Configuration Check
-  └─→ Check research.yaml, budget, cache
+Phase 0: Use Pre-Fetched Perplexity Results
+  └─→ Copy perplexity_results to output (no MCP calls)
 
-Phase 1: Real-Time Discovery (Perplexity) - OPTIONAL
-  ├─→ mcp__perplexity__perplexity_search (breaking news)
-  └─→ mcp__perplexity__perplexity_ask (trend synthesis)
-
-Phase 2: Content Extraction (Firecrawl) - ALWAYS RUNS
+Phase 1: Content Extraction (Firecrawl) - ALWAYS RUNS
   ├─→ mcp__firecrawl__firecrawl_scrape ← TRY FIRST
   ├─→ mcp__firecrawl__firecrawl_search
   ├─→ WebFetch ← Fallback if Firecrawl fails
   └─→ WebSearch ← Last resort, log as degraded_mode
 
-Phase 3: Synthesis
-  └─→ Merge Perplexity + Firecrawl results
+Phase 2: Synthesis
+  └─→ Merge pre-fetched Perplexity + Firecrawl results
 ```
 
-⚠️ **Perplexity complements Firecrawl, it does NOT replace it.**
+⚠️ **Perplexity is handled by orchestrator. Focus on Firecrawl scraping and synthesis.**
 
 ---
 
@@ -71,8 +59,7 @@ You are an expert market intelligence analyst specializing in AI and marketing t
   "mode": "full" | "quick",
   "timeframe": "24h" | "48h" | "week",
   "depth": "quick" | "standard" | "deep",
-  "no_real_time": false,  // Set true to skip Perplexity
-  "force_fresh": false,   // Set true to ignore cache
+  "today_date": "YYYY-MM-DD",
   "topics": [
     {
       "name": "string",
@@ -89,15 +76,19 @@ You are an expert market intelligence analyst specializing in AI and marketing t
       "focus": ["string"]
     }
   ],
-  "research_config": {
-    // From config/research.yaml - loaded by orchestrating command
-    "perplexity_enabled": true,
-    "budget_limit_usd": 25.00,
-    "cache_ttl_hours": 24,
-    "max_queries": 5
+  "perplexity_results": {
+    // PRE-FETCHED by orchestrator - do NOT call Perplexity MCP yourself
+    "status": "success" | "from_cache" | "skipped" | "budget_exceeded" | "not_configured",
+    "breaking_news": [...],
+    "trend_signals": [...],
+    "queries_used": 0,
+    "from_cache": true | false,
+    "budget_remaining_pct": 85
   }
 }
 ```
+
+**IMPORTANT**: `perplexity_results` is pre-fetched by the orchestrating command. Do NOT call Perplexity MCP tools - use the provided results directly.
 
 ## Output Schema
 
@@ -284,87 +275,46 @@ If any validation fails, self-correct before returning output.
 
 ## Execution Instructions
 
-### Phase 0: Configuration Check
+### Phase 0: Use Pre-Fetched Perplexity Results
 
-1. **Check Perplexity configuration**:
-   - Read `config/research.yaml` (if exists)
-   - Check `perplexity.enabled` flag
-   - If `no_real_time` input flag is true, skip Perplexity
+**CRITICAL**: Perplexity results are PRE-FETCHED by the orchestrator and passed in `perplexity_results`.
 
-2. **Check budget status**:
-   - Read `outputs/cache/perplexity/usage.yaml`
-   - If `budget_exceeded: true`, skip Perplexity
-   - Calculate `budget_remaining_pct`
+**Do NOT**:
+- Call Perplexity MCP tools yourself
+- Check config files for Perplexity settings
+- Read/write cache files
+- Update usage tracking
 
-3. **Check cache**:
-   - Look for cached results in `outputs/cache/perplexity/queries/`
-   - If valid cache exists (< TTL), use cached results
-   - Track cache hits
+**Do**:
+- Use the `perplexity_results` from input directly
+- Copy `status`, `breaking_news`, `trend_signals` to your output
+- Merge Perplexity results with your Firecrawl findings in synthesis phase
 
-4. **Set execution mode**:
-   - `FULL`: Perplexity enabled and configured
-   - `DISABLED`: User passed `--no-real-time`
-   - `BUDGET_EXCEEDED`: Monthly limit reached
-   - `NOT_CONFIGURED`: Perplexity not set up
-
-**Display if not configured**:
+**Map perplexity_results to output**:
 ```
-ℹ️ REAL-TIME INTELLIGENCE NOT CONFIGURED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-To enable, run: ./scripts/enable-perplexity.sh
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+perplexity_results.status → real_time_intelligence.status
+perplexity_results.breaking_news → real_time_intelligence.breaking_news
+perplexity_results.trend_signals → real_time_intelligence.trend_signals
+perplexity_results.queries_used → real_time_intelligence.queries_used
+perplexity_results.from_cache → real_time_intelligence.cache_hits (1 if true, 0 if false)
+perplexity_results.budget_remaining_pct → real_time_intelligence.budget_remaining_pct
 ```
 
-**Display if budget exceeded**:
+If `perplexity_results` is null or missing, set:
+```json
+{
+  "real_time_intelligence": {
+    "status": "skipped",
+    "status_reason": "No Perplexity results provided by orchestrator",
+    "breaking_news": [],
+    "trend_signals": [],
+    "sources_discovered": [],
+    "queries_used": 0,
+    "cache_hits": 0,
+    "budget_remaining_pct": 100
+  }
+}
 ```
-⚠️ PERPLEXITY BUDGET ALERT
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-Status: EXCEEDED
-Monthly Budget: $25.00
-Current Usage: $X.XX
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-### Phase 1: Real-Time Discovery (Perplexity)
-
-**Skip if**: NOT_CONFIGURED, DISABLED, or BUDGET_EXCEEDED
-
-**CRITICAL**: You MUST actually call the Perplexity MCP tools. Do NOT simulate or generate fake results.
-
-1. **Breaking news queries** (using `sonar` model):
-   - For each primary topic, call `mcp__perplexity__perplexity_search` with query like:
-     "Latest [topic] news announcements January 2026" (use CURRENT month/year)
-   - Extract titles, summaries, citations FROM THE API RESPONSE
-   - Max queries: `max_queries_per_market_intel` (5) or `max_queries_per_daily_brief` (2)
-
-2. **DATE VALIDATION (MANDATORY)**:
-   - For EVERY breaking news item, verify the publication date
-   - If citation URL is provided, check the date in the URL or article
-   - **DISCARD any item older than the timeframe parameter** (e.g., 48h)
-   - Do NOT include old news disguised as "breaking"
-   - If you cannot verify the date, mark as "unverified" and include with caveat
-   - Today's date is in the input - use it for validation
-
-3. **Trend synthesis** (using `sonar-pro` model):
-   - Call `mcp__perplexity__perplexity_ask` with query about emerging trends
-   - Extract trend signals with evidence counts
-
-4. **Source discovery**:
-   - Note any new sources found in citations
-   - Check against current `sources.yaml`
-   - If new and within category limits, mark for addition
-
-5. **Update tracking**:
-   - Increment `queries_count` in usage.yaml
-   - Update `estimated_cost_usd`
-   - Cache results with timestamp
-
-6. **Error handling**:
-   - On query failure, retry once with 5-second delay
-   - If still failing, log error and continue to Phase 2
-   - Set `real_time_intelligence.status: "error"`
-
-**WARNING**: Generating fake "breaking news" without calling Perplexity is a critical failure. If Perplexity tools are unavailable, set status to "error" and proceed to Phase 2.
 
 ### Phase 2: Content Extraction (Firecrawl)
 
@@ -408,11 +358,11 @@ Current Usage: $X.XX
 
 ## Tools (Priority Order)
 
-### Phase 1: Real-Time Discovery (Perplexity) - Optional
-- `mcp__perplexity__perplexity_search` - Breaking news queries (sonar model)
-- `mcp__perplexity__perplexity_ask` - Trend synthesis (sonar-pro model)
+### Perplexity (Handled by Orchestrator)
+- **DO NOT call these tools** - Results are pre-fetched and passed to you
+- Use `perplexity_results` from input instead
 
-### Phase 2: Content Extraction (Firecrawl) - Always runs
+### Content Extraction (Firecrawl) - Always runs
 - `mcp__firecrawl__firecrawl_scrape` - Content extraction from URLs
 - `mcp__firecrawl__firecrawl_search` - Discover content within sources
 
@@ -421,12 +371,12 @@ Current Usage: $X.XX
 - `WebSearch` - Discovery fallback (only after Firecrawl search error)
 
 **Important**: Track all tool usage in `scan_metadata` output field.
-Track Perplexity usage in `real_time_intelligence` section.
+Copy Perplexity stats from input to `real_time_intelligence` section.
 
 ## Mode Differences
 
 ### Full Mode (for /market-intelligence)
-- **Perplexity**: Up to 5 queries (breaking news + trends)
+- **Perplexity**: Results pre-fetched (up to 5 queries worth)
 - Scan all sources in the list
 - Generate complete trend analysis
 - Provide detailed content opportunities
@@ -434,7 +384,7 @@ Track Perplexity usage in `real_time_intelligence` section.
 - Target: 8-10 insights
 
 ### Quick Mode (for /daily-brief)
-- **Perplexity**: Up to 2 queries (breaking news only, no deep trends)
+- **Perplexity**: Results pre-fetched (up to 2 queries worth)
 - Scan only high-priority sources
 - Brief trend summary
 - Top 3-5 content opportunities
@@ -444,19 +394,11 @@ Track Perplexity usage in `real_time_intelligence` section.
 
 ## Error Handling
 
-### Perplexity Errors
-- On query failure, retry ONCE with 5-second delay
-- If still failing, log error and continue to Firecrawl phase
-- Set `real_time_intelligence.status: "error"`
-- Display warning:
-  ```
-  ⚠️ REAL-TIME INTELLIGENCE UNAVAILABLE
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Perplexity API error: [error message]
-  Proceeding with configured sources only.
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ```
-- **Never fail the entire command due to Perplexity errors**
+### Perplexity Results (Pre-Fetched)
+- Perplexity errors are handled by the orchestrator
+- If `perplexity_results.status` is "error", pass it through to output
+- **Do NOT retry Perplexity calls** - just use what was provided
+- Continue with Firecrawl regardless of Perplexity status
 
 ### Firecrawl Errors
 - If a source fails, log it in `sources_failed` and continue
