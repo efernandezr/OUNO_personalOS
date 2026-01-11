@@ -34,6 +34,13 @@ Scan configured sources for AI marketing insights, trends, and developments.
   - Use sparingly as it consumes more budget
   - Only affects Perplexity queries, not Firecrawl
 
+- `--deep [topic]`: Enable deep research mode using sonar-deep-research model
+  - Without value: Smart-pick hottest topic from scan results, ask for confirmation
+  - With value (e.g., `--deep "AI Agents"`): Use specified topic directly
+  - Generates comprehensive analysis section in the report
+  - Uses separate budget cap ($20/month default)
+  - Cost warning shown based on budget threshold (confirm if >50% used)
+
 ## Orchestration Pattern
 
 This command uses **Task tool delegation** to the `intelligence-agent`.
@@ -43,7 +50,7 @@ This command uses **Task tool delegation** to the `intelligence-agent`.
 ```
 Orchestrator (this command)     →     intelligence-agent
 ─────────────────────────────────────────────────────────
-1. Parse parameters (incl. --no-real-time)
+1. Parse parameters (incl. --no-real-time, --deep)
 2. Load configs (topics, sources, research)
 3. Filter sources by depth
 4. CHECK PERPLEXITY CACHE (orchestrator)
@@ -55,10 +62,12 @@ Orchestrator (this command)     →     intelligence-agent
                                  →    10. Synthesis
                                  →    11. Return JSON
 12. Receive JSON output          ←
-13. Format markdown (incl. Real-Time Intelligence)
-14. Write files
-15. Auto-add discovered sources
-16. Sync to Notion (sync-agent)
+13. [IF --deep] DEEP RESEARCH (see Step 6.5)
+14. Format markdown (incl. Deep Research if --deep)
+15. Write files
+16. Auto-add discovered sources
+17. Sync to Notion (sync-agent)
+18. Update STATUS.md
 ```
 
 ## Tool Enforcement
@@ -114,23 +123,46 @@ Skip this step if:
    - Set `from_cache: true`
    - Skip to Step 2.5.4
 
-#### 2.5.2: Call Perplexity MCP (if cache miss)
+#### 2.5.2: Build Dynamic Queries from Topics
+
+**Load Topics** from `config/topics.yaml`:
+```
+1. Read topics.yaml
+2. Extract primary topic names: ["AI for Marketing", "AI Agents", "Claude/Anthropic", "Marketing Automation"]
+3. Join with commas: "AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation"
+```
+
+**Load Query Templates** from `config/research.yaml`:
+```yaml
+query_templates:
+  breaking_news: "Latest news: {topics} {timeframe}"
+  trend_discovery: "Emerging trends in {topics} for enterprise {timeframe}"
+```
+
+#### 2.5.3: Call Perplexity MCP (if cache miss)
 
 **Breaking News Query** (use `mcp__perplexity__search`):
 ```
-Query: "Latest AI marketing news announcements {current_month} {current_year}"
+Template: research.yaml → query_templates.breaking_news
+Topics: primary topic names from topics.yaml
+Timeframe: "{current_month} {current_year}"
+
+Example: "Latest news: AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation January 2026"
 ```
 
 **Trend Discovery Query** (use `mcp__perplexity__reason` for standard/deep only):
 ```
-Query: "What are the emerging trends in AI for marketing and enterprise AI agents in {current_month} {current_year}?"
+Template: research.yaml → query_templates.trend_discovery
+Topics: primary + secondary topic names for standard/deep depth
+
+Example: "Emerging trends in AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation, Enterprise AI for enterprise January 2026"
 ```
 
 Extract from responses:
 - `breaking_news[]` - Title, summary, source URLs from citations
 - `trend_signals[]` - Trend name, evidence count, trajectory
 
-#### 2.5.3: Write Cache + Update Usage
+#### 2.5.4: Write Cache + Update Usage
 
 1. Write results to `system/cache/perplexity/queries/{cache_key}.json`:
 ```json
@@ -149,13 +181,15 @@ Extract from responses:
 2. Update `system/cache/perplexity/usage.yaml`:
 ```yaml
 current_month: "{YYYY-MM}"
-queries_count: {increment by queries used}
-estimated_cost_usd: {add ~$0.005 per search, ~$0.02 per ask}
-last_updated: "{ISO timestamp}"
-budget_exceeded: {true if estimated_cost >= budget_limit}
+regular:
+  queries_count: {increment by queries used}
+  estimated_cost_usd: {add ~$0.005 per search, ~$0.02 per reason}
+  last_updated: "{ISO timestamp}"
+total_cost_usd: {regular.estimated_cost_usd + deep_research.estimated_cost_usd}
+budget_exceeded: {true if regular.estimated_cost_usd >= budget.monthly_limit_usd}
 ```
 
-#### 2.5.4: Prepare Perplexity Results for Agent
+#### 2.5.5: Prepare Perplexity Results for Agent
 
 ```json
 {
@@ -227,6 +261,129 @@ The agent returns JSON with:
 - `sources_failed[]` - URLs that failed
 - `scan_metadata` - Tool usage tracking (verify `primary_tool: "firecrawl"`)
 
+### Step 5.5: Deep Research (Orchestrator) - IF `--deep` FLAG
+
+**Skip this step if** `--deep` flag was not provided.
+
+#### 5.5.1: Determine Topic
+
+**If `--deep "Topic Name"` was provided:**
+- Use the specified topic directly
+- Skip to 5.5.2
+
+**If `--deep` without value:**
+1. Analyze agent output to find most prominent topic:
+   - Count topic mentions across `insights[]`
+   - Weight by priority (High = 3, Medium = 2, Low = 1)
+   - Select topic with highest weighted count
+2. Present selection to user using AskUserQuestion:
+   ```
+   "Deep research topic suggestion: '{topic}' (mentioned {count} times in scan).
+
+   Options:
+   - Use suggested topic
+   - Enter different topic
+   - Skip deep research"
+   ```
+3. Wait for user response before proceeding
+
+#### 5.5.2: Check Budget and Show Warning
+
+1. Read `system/cache/perplexity/usage.yaml`
+2. Calculate deep research budget usage:
+   ```
+   used = deep_research.estimated_cost_usd
+   limit = research.yaml → budget.deep_research.monthly_limit_usd
+   pct_used = (used / limit) * 100
+   threshold = research.yaml → budget.deep_research.alert_threshold_pct
+   ```
+3. **If pct_used < threshold (default 50%):**
+   - Show info message: "Deep research: ~$3-5 estimated. Budget: ${used}/${limit} ({pct_used}% used)"
+   - Proceed automatically
+
+4. **If pct_used >= threshold:**
+   - Require confirmation using AskUserQuestion:
+     ```
+     "Deep research budget warning: {pct_used}% used (${used}/${limit}).
+     This query may cost ~$3-5. Proceed?"
+
+     Options:
+     - Yes, proceed
+     - No, skip deep research
+     ```
+   - Only proceed if user confirms
+
+5. **If budget exceeded (pct_used >= 100%):**
+   - Show error: "Deep research budget exceeded for this month."
+   - Skip deep research, continue with regular output
+
+#### 5.5.3: Execute Deep Research
+
+1. Load query template from `config/research.yaml`:
+   ```yaml
+   query_templates:
+     deep_research: "Comprehensive analysis of {topic}: current market landscape, key players and recent developments, emerging patterns and signals, strategic implications"
+   ```
+
+2. Call Perplexity deep research MCP:
+   ```
+   mcp__perplexity__perplexity_research
+
+   messages: [
+     {
+       role: "user",
+       content: "{query_template with {topic} replaced}"
+     }
+   ]
+   strip_thinking: true  # Save context tokens
+   ```
+
+3. Parse response and extract:
+   - `executive_summary` - First 2-3 sentences
+   - `market_landscape` - Current state analysis
+   - `key_players` - Major companies and moves
+   - `emerging_patterns` - Trends and signals
+   - `strategic_implications` - What it means
+   - `sources[]` - Citations from the research
+
+#### 5.5.4: Update Deep Research Usage
+
+Update `system/cache/perplexity/usage.yaml`:
+```yaml
+deep_research:
+  queries_count: {increment by 1}
+  estimated_cost_usd: {add ~$3-5 based on response length}
+  last_updated: "{ISO timestamp}"
+  history:
+    - date: "{today}"
+      topic: "{topic}"
+      cost: {estimated cost}
+```
+
+#### 5.5.5: Store Deep Research Results
+
+Store in variable for Step 6:
+```json
+{
+  "deep_research": {
+    "enabled": true,
+    "topic": "{topic}",
+    "executive_summary": "...",
+    "market_landscape": "...",
+    "key_players": "...",
+    "emerging_patterns": "...",
+    "strategic_implications": "...",
+    "sources": [...],
+    "cost_estimate": 4.25,
+    "budget_status": {
+      "used": 8.50,
+      "limit": 20.00,
+      "pct_used": 42.5
+    }
+  }
+}
+```
+
 ### Step 6: Format Markdown Output (Orchestrator)
 
 Transform JSON into markdown format:
@@ -240,9 +397,46 @@ Transform JSON into markdown format:
 | **Generated** | {timestamp} |
 | **Report Type** | market-intelligence |
 | **Timeframe** | {timeframe} |
+| **Depth** | {depth} |
 | **Status** | {scan_metadata.degraded_mode ? "degraded" : "success"} |
 | **Sources Scanned** | {sources_scanned} |
 | **Real-Time** | {real_time_intelligence.status} |
+| **Deep Research** | {deep_research.enabled ? deep_research.topic : "none"} |
+| **Perplexity Budget** | Regular: ${regular_used}/${regular_limit} | Deep: ${deep_used}/${deep_limit} |
+
+---
+
+{If deep_research.enabled:}
+## Deep Research: {deep_research.topic}
+
+> **Cost**: ~${deep_research.cost_estimate} | **Budget**: ${deep_research.budget_status.used}/${deep_research.budget_status.limit} ({deep_research.budget_status.pct_used}% used)
+
+### Executive Summary
+
+{deep_research.executive_summary}
+
+### Market Landscape
+
+{deep_research.market_landscape}
+
+### Key Players & Developments
+
+{deep_research.key_players}
+
+### Emerging Patterns
+
+{deep_research.emerging_patterns}
+
+### Strategic Implications
+
+{deep_research.strategic_implications}
+
+### Deep Research Sources
+
+| Source | URL |
+|--------|-----|
+{For each source in deep_research.sources:}
+| {source.title} | [{source.url}]({source.url}) |
 
 ---
 

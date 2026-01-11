@@ -13,14 +13,31 @@ perplexity:
   # Budget Management
   # Hard limit prevents overspending; alert warns when approaching
   budget:
+    # Regular queries (search, reason)
     monthly_limit_usd: 25.00      # Hard spending limit per month
     alert_threshold_pct: 80       # Show warning at this % of budget
+
+    # Deep research (separate cap)
+    # Uses sonar-deep-research model for comprehensive analysis
+    deep_research:
+      monthly_limit_usd: 20.00    # Separate budget for deep research
+      alert_threshold_pct: 50     # Require confirmation above this %
+      default_reasoning_effort: "medium"  # low/medium/high
 
   # Query Settings
   queries:
     time_window: "48h"            # How far back to search for news
     max_queries_per_market_intel: 5   # Max queries for /market-intelligence
     max_queries_per_daily_brief: 2    # Max queries for /daily-brief (lighter)
+
+  # Query Templates (dynamic from topics.yaml)
+  # {topics} = comma-separated topic names from topics.yaml
+  # {topic} = single topic for deep research
+  # {timeframe} = current month/year
+  query_templates:
+    breaking_news: "Latest news: {topics} {timeframe}"
+    trend_discovery: "Emerging trends in {topics} for enterprise {timeframe}"
+    deep_research: "Comprehensive analysis of {topic}: current market landscape, key players and recent developments, emerging patterns and signals, strategic implications"
 
   # Caching
   # Reduces API costs by reusing recent results
@@ -31,10 +48,11 @@ perplexity:
 
   # Model Selection (cost optimization)
   # sonar = cheapest, sonar-pro = better synthesis
-  # sonar-deep-research = most thorough but expensive (not used yet)
+  # sonar-deep-research = comprehensive but expensive
   models:
     breaking_news: "sonar"        # Fast, cheap - for news detection
     trend_discovery: "sonar-pro"  # Better - for trend synthesis
+    deep_research: "sonar-deep-research"  # Comprehensive analysis
 
 # ─────────────────────────────────────────────────────────────
 # Source Discovery Settings

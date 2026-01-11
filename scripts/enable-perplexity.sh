@@ -146,13 +146,27 @@ echo -e "${GREEN}  ✓ Created cache directories${NC}"
 if [[ ! -f "system/cache/perplexity/usage.yaml" ]]; then
     cat > "system/cache/perplexity/usage.yaml" << EOF
 # Perplexity API Usage Tracking
-# Auto-updated by intelligence-agent
+# Auto-updated by intelligence-agent and deep-research commands
 
 current_month: "$(date +%Y-%m)"
-queries_count: 0
-estimated_cost_usd: 0.00
-last_updated: null
+
+# Regular queries (search, reason)
+regular:
+  queries_count: 0
+  estimated_cost_usd: 0.00
+  last_updated: null
+
+# Deep research (sonar-deep-research model)
+deep_research:
+  queries_count: 0
+  estimated_cost_usd: 0.00
+  last_updated: null
+  history: []  # List of {date, topic, cost} entries
+
+# Combined status
+total_cost_usd: 0.00
 budget_exceeded: false
+deep_research_budget_exceeded: false
 EOF
     echo -e "${GREEN}  ✓ Created usage tracker${NC}"
 fi
@@ -166,11 +180,20 @@ echo -e "${NC}"
 echo ""
 echo "Real-time intelligence is now enabled for:"
 echo -e "  ${GREEN}•${NC} /market-intelligence"
+echo -e "  ${GREEN}•${NC} /market-intelligence --deep"
 echo -e "  ${GREEN}•${NC} /daily-brief"
+echo -e "  ${GREEN}•${NC} /deep-research"
+echo -e "  ${GREEN}•${NC} /perplexity-budget"
 echo ""
 echo -e "${YELLOW}Important:${NC} Restart Claude Code to load the new MCP server."
 echo ""
 echo "Useful commands:"
-echo -e "  ${BLUE}--no-real-time${NC}  Disable Perplexity for a single run"
+echo -e "  ${BLUE}--no-real-time${NC}        Disable Perplexity for a single run"
+echo -e "  ${BLUE}--deep${NC}                Enable deep research in market-intelligence"
+echo -e "  ${BLUE}/perplexity-budget${NC}    Check current API usage and costs"
 echo -e "  ${BLUE}config/research.yaml${NC}  Adjust budget and settings"
+echo ""
+echo "Budget defaults:"
+echo -e "  ${CYAN}Regular queries:${NC}  \$25/month"
+echo -e "  ${CYAN}Deep research:${NC}    \$20/month (separate cap)"
 echo ""

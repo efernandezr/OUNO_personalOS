@@ -86,6 +86,9 @@ Read these config files:
 - `config/research.yaml` - Get Perplexity settings (if exists)
   - If file doesn't exist, set `perplexity_enabled: false`
   - Extract: `enabled`, `budget.monthly_limit_usd`, `cache.ttl_hours`, `queries.max_queries_per_daily_brief`
+- `system/cache/perplexity/usage.yaml` - Get current budget usage (for metrics display)
+  - If file doesn't exist, display "Not configured" for budget
+  - Extract: `total_cost_usd`, calculate remaining vs limits from research.yaml
 
 ### Step 1.5: Breaking News Discovery (Orchestrator) - PERPLEXITY
 
@@ -105,11 +108,30 @@ Skip this step if:
    - Set `from_cache: true`
    - Skip to Step 1.5.4
 
-#### 1.5.2: Call Perplexity MCP (if cache miss)
+#### 1.5.2: Build Dynamic Query from Topics
+
+**Load Topics** from `config/topics.yaml`:
+```
+1. Read topics.yaml
+2. Extract primary topic names only (daily brief is lighter)
+3. Join with commas: "AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation"
+```
+
+**Load Query Template** from `config/research.yaml`:
+```yaml
+query_templates:
+  breaking_news: "Latest news: {topics} {timeframe}"
+```
+
+#### 1.5.3: Call Perplexity MCP (if cache miss)
 
 **Breaking News Query** (use `mcp__perplexity__search`):
 ```
-Query: "Breaking AI marketing news today {current_date}"
+Template: research.yaml → query_templates.breaking_news
+Topics: primary topic names from topics.yaml
+Timeframe: "today {current_date}"
+
+Example: "Latest news: AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation today 2026-01-11"
 ```
 
 Max 1-2 queries only (lighter than /market-intelligence).
@@ -117,12 +139,18 @@ Max 1-2 queries only (lighter than /market-intelligence).
 Extract from response:
 - `breaking_news[]` - Title, summary, source URLs from citations
 
-#### 1.5.3: Write Cache + Update Usage
+#### 1.5.4: Write Cache + Update Usage
 
 1. Write results to `system/cache/perplexity/queries/{cache_key}.json`
-2. Update `system/cache/perplexity/usage.yaml` (increment queries_count)
+2. Update `system/cache/perplexity/usage.yaml`:
+```yaml
+regular:
+  queries_count: {increment by 1}
+  estimated_cost_usd: {add ~$0.005}
+  last_updated: "{ISO timestamp}"
+```
 
-#### 1.5.4: Prepare Perplexity Results for Agent
+#### 1.5.5: Prepare Perplexity Results for Agent
 
 ```json
 {
@@ -258,6 +286,7 @@ Transform agent JSON into brief format:
 - LinkedIn followers: {current} / {target}
 - Newsletter subscribers: {current} / {target}
 - Content published this week: {current}
+- Perplexity budget: ${used}/${total} ({pct_remaining}% remaining) {status_emoji}
 
 {If --include-todos and tasks returned:}
 ### Priority Tasks
@@ -417,6 +446,7 @@ Generate minimal brief with warning:
 
 ### Metrics Snapshot
 {from goals.yaml}
+- Perplexity budget: ${used}/${total} ({pct_remaining}% remaining)
 
 ### Focus Suggestion
 Review yesterday's brief for pending opportunities.

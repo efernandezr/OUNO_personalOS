@@ -50,17 +50,21 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 
 ### High Priority (MVP)
 - `/market-intelligence` - Scan sources for AI marketing insights
+  - `--deep [topic]` - Add deep research for comprehensive analysis
 - `/daily-brief` - Generate morning intelligence brief
 - `/brain-dump-analysis` - Analyze notes for patterns and opportunities
 - `/content-repurpose` - Transform content for different platforms
+- `/deep-research [topic]` - On-demand comprehensive deep research
 
 ### Utility Commands
 - `/add-source` - Add new sources to monitoring configuration
 - `/add-story` - Add personal stories and experiences to context
+- `/sync-status` - Rebuild STATUS.md from project state
 - `/sync-brain-dumps` - Pull brain dumps and personal context from Notion
 - `/checkpoint` - Create a git checkpoint commit with all changes
 - `/voice-calibrate` - Calibrate voice profile from writing samples
 - `/create-spec` - Create feature spec from planning conversation
+- `/perplexity-budget` - View Perplexity API budget status and usage
 
 ### Future Commands (Not Yet Implemented)
 - `/competitive-analysis` - Track competitor content and positioning
@@ -369,14 +373,20 @@ PersonalOS can use Perplexity for real-time discovery:
 - **Breaking news detection** (last 48h)
 - **Trend discovery** across the web
 - **New source identification**
+- **Deep research** - Comprehensive topic analysis
 
 **Tools**:
 - `mcp__perplexity__search` - Breaking news queries (sonar model)
 - `mcp__perplexity__reason` - Trend synthesis (sonar-pro model)
+- `mcp__perplexity__research` - Deep research (sonar-deep-research model)
 
-**Configuration**: `config/research.yaml` (default $25/month budget)
+**Configuration**: `config/research.yaml`
+- Regular queries: $25/month budget (default)
+- Deep research: $20/month budget (separate cap)
 
 **Enable**: Run `./scripts/enable-perplexity.sh` for guided setup
+
+**Budget visibility**: Run `/perplexity-budget` to check usage
 
 ### Workflow: Perplexity + Firecrawl
 
@@ -414,10 +424,16 @@ When Perplexity is not configured or unavailable:
 
 ### Budget Tracking
 
+**Two-tier budget system**:
+- Regular queries: $25/month (alert at 80%)
+- Deep research: $20/month (confirmation required at 50%)
+
+**Tracking**:
 - Usage tracked in `system/cache/perplexity/usage.yaml`
-- Alerts at 80% budget usage
-- Hard stop when budget exceeded
+- Separate counters for regular vs deep research
+- Hard stop when either budget exceeded
 - Cache (24h TTL) reduces API calls
+- Run `/perplexity-budget` to check current usage
 
 ---
 
@@ -520,4 +536,5 @@ When adding new config files:
 | 2.2 | 2026-01-10 | Spec creation: /create-spec command, specs/ folder, improvement workflow |
 | 2.3 | 2026-01-10 | Perplexity integration: Real-time intelligence, breaking news, trend discovery, source auto-discovery |
 | 2.4 | 2026-01-10 | Unified output templates, source citation enforcement, JSON schema validation |
-| 2.5 | 2026-01-11 | Removed STATUS.md and /sync-status for simplicity (two-file system) |
+| 2.5 | 2026-01-11 | Folder restructure: Pipeline-based numbering (1-capture, 2-research, 3-content, 4-archive) |
+| 2.6 | 2026-01-11 | Deep research: /deep-research command, --deep flag, /perplexity-budget, dynamic topic queries, two-tier budget system |

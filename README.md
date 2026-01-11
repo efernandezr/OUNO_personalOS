@@ -71,10 +71,11 @@ The setup script will:
 
 ### Enable Real-Time Intelligence (Optional)
 
-PersonalOS can use Perplexity API to enhance `/market-intelligence` and `/daily-brief` with:
+PersonalOS can use Perplexity API to enhance intelligence gathering with:
 - **Breaking news detection** (last 48 hours)
 - **Trend discovery** beyond configured sources
 - **Automatic source discovery**
+- **Deep research** - Comprehensive topic analysis
 
 To enable:
 
@@ -88,7 +89,11 @@ This will:
 - Create `config/research.yaml` with budget settings
 - Set up caching to manage API costs
 
-**Budget**: Default $25/month with configurable hard limit and alerts.
+**Budget**: Two-tier system:
+- Regular queries: $25/month (alert at 80%)
+- Deep research: $20/month separate cap (confirmation required at 50%)
+
+**Check usage**: Run `/perplexity-budget` to see current spending.
 
 **Skip for now?** Commands work without Perplexity - you'll just miss real-time intelligence. Enable it anytime later.
 
@@ -116,6 +121,10 @@ Scan configured sources for AI marketing insights, trends, and developments. Inc
 
 # Force fresh Perplexity data (ignores cache)
 /market-intelligence --force-fresh
+
+# Add deep research (comprehensive topic analysis)
+/market-intelligence --deep                    # Smart topic selection from scan
+/market-intelligence --deep "AI Agents"        # Specific topic
 ```
 
 **Output:** `2-research/market-briefs/{date}-market-brief.md`
@@ -126,6 +135,12 @@ Scan configured sources for AI marketing insights, trends, and developments. Inc
 - Breaking news from the last 48 hours
 - Trend signals across the web
 - New sources discovered and auto-added
+
+**Deep Research** (requires Perplexity, `--deep` flag):
+- Comprehensive analysis of a specific topic
+- Market landscape, key players, emerging patterns
+- Strategic implications and recommended actions
+- Uses separate budget pool (~$3-5 per report)
 
 ---
 
@@ -355,6 +370,79 @@ Create a git checkpoint commit with all current framework changes.
 - Creates the commit (does not push)
 
 **Note:** Only framework files are committed. Personal configs and outputs are gitignored.
+
+---
+
+### `/deep-research`
+
+On-demand comprehensive deep research on a specific topic using Perplexity's sonar-deep-research model.
+
+```bash
+# Interactive topic picker (shows topics from topics.yaml)
+/deep-research
+
+# Specific topic
+/deep-research "AI Agents in Marketing"
+
+# Filter topics shown in picker
+/deep-research --topics primary     # Show only primary topics
+/deep-research --topics secondary   # Show only secondary topics
+
+# Control research depth vs cost
+/deep-research --effort low         # Faster, lower cost (~$2-3)
+/deep-research --effort medium      # Balanced (default, ~$3-5)
+/deep-research --effort high        # Most thorough (~$5-8)
+```
+
+**Output:** `2-research/market-briefs/{date}-{time}-deep-research-{slug}.md`
+
+**Notion Sync:** Creates entry in "POS: Market Intelligence" with "Deep Research" tag
+
+**Report includes:**
+- Executive summary
+- Market landscape analysis
+- Key players and recent developments
+- Emerging patterns and signals
+- Competitive dynamics
+- Strategic implications and recommended actions
+- All sources cited with URLs
+
+**Budget:** Uses separate deep research budget ($20/month default). Confirmation required when above 50% usage.
+
+---
+
+### `/perplexity-budget`
+
+View Perplexity API budget status and usage history.
+
+```bash
+/perplexity-budget
+```
+
+**Shows:**
+- Current month spending vs limits
+- Regular queries vs deep research breakdown
+- Usage history with cost per report
+- Budget projections and remaining capacity
+- Quick reference for command costs
+
+**Note:** This is a read-only diagnostic command - no files are created.
+
+---
+
+### `/sync-status`
+
+Rebuild STATUS.md from project state. Use after `/clear` or if status seems stale.
+
+```bash
+/sync-status
+```
+
+**What it does:**
+- Scans output directories for recent files
+- Reads config file summaries
+- Rebuilds STATUS.md with accurate state
+- Generates suggested next actions
 
 ## Output Format
 
@@ -623,10 +711,13 @@ For best results, structure your brain dumps like this:
 | `/market-intelligence --depth quick` | < 1 minute |
 | `/market-intelligence` (standard) | < 3 minutes |
 | `/market-intelligence --depth deep` | < 5 minutes |
+| `/market-intelligence --deep` | < 5 minutes (incl. deep research) |
 | `/daily-brief` | < 2 minutes |
 | `/brain-dump-analysis` | < 3 minutes |
 | `/content-repurpose` | < 2 minutes |
 | `/sync-brain-dumps` | < 1 minute |
+| `/deep-research` | < 3 minutes |
+| `/perplexity-budget` | < 5 seconds |
 
 ## Troubleshooting
 
