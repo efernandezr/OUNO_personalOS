@@ -6,6 +6,12 @@ description: Create a checkpoint commit with all current changes
 
 Create a comprehensive checkpoint commit following PersonalOS conventions.
 
+## Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--push` | No | Push to remote immediately after commit |
+
 ## Instructions
 
 ### 1. Pre-flight Checks
@@ -100,6 +106,26 @@ EOF
 )"
 ```
 
+### 6. Push to Remote (if --push flag)
+
+If `$ARGUMENTS` contains `--push`:
+
+```bash
+# Check if upstream is set
+git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null
+
+# If no upstream, set it automatically
+git push -u origin $(git branch --show-current)
+
+# If upstream exists, just push
+git push
+```
+
+**Push behavior:**
+- Auto-sets upstream with `-u origin <branch>` if not configured
+- Pushes immediately without confirmation
+- Reports success with remote URL and commit hash
+
 ## Important Notes
 
 - **Include everything**: Don't skip files - this is a checkpoint
@@ -112,5 +138,8 @@ EOF
 Use `/checkpoint` when you want to:
 - Save progress on framework development
 - Create a restore point before major changes
-- Prepare for pushing to GitHub
 - Document a completed feature or fix
+
+Use `/checkpoint --push` when you want to:
+- Commit and push in one step
+- Share changes to GitHub immediately

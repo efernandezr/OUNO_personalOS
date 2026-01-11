@@ -362,12 +362,16 @@ Create a git checkpoint commit with all current framework changes.
 ```bash
 # Create checkpoint with auto-generated commit message
 /checkpoint
+
+# Create checkpoint and push to remote
+/checkpoint --push
 ```
 
 **What it does:**
 - Stages all framework changes (commands, agents, docs, scripts)
 - Generates a descriptive commit message following conventions
-- Creates the commit (does not push)
+- Creates the commit
+- With `--push`: pushes to remote (auto-sets upstream if needed)
 
 **Note:** Only framework files are committed. Personal configs and outputs are gitignored.
 

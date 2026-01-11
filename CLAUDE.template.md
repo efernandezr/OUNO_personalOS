@@ -67,7 +67,7 @@ See `config/voice-profile.yaml` for detailed voice specifications.
 - `/add-story` - Add personal stories and experiences to context
 - `/sync-status` - Rebuild STATUS.md from project state
 - `/sync-brain-dumps` - Pull brain dumps and personal context from Notion
-- `/checkpoint` - Create a git checkpoint commit with all changes
+- `/checkpoint` - Create a git checkpoint commit (`--push` to also push)
 - `/voice-calibrate` - Calibrate voice profile from writing samples
 - `/create-spec` - Create feature spec from planning conversation
 - `/perplexity-budget` - View Perplexity API budget status and usage
