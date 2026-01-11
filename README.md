@@ -338,6 +338,24 @@ Create a feature specification from a planning conversation.
 
 **Note:** Specs are gitignored (personal to each user's improvements).
 
+---
+
+### `/checkpoint`
+
+Create a git checkpoint commit with all current framework changes.
+
+```bash
+# Create checkpoint with auto-generated commit message
+/checkpoint
+```
+
+**What it does:**
+- Stages all framework changes (commands, agents, docs, scripts)
+- Generates a descriptive commit message following conventions
+- Creates the commit (does not push)
+
+**Note:** Only framework files are committed. Personal configs and outputs are gitignored.
+
 ## Output Format
 
 All PersonalOS reports follow a unified structure with consistent source citations.
