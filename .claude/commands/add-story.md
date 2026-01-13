@@ -287,7 +287,7 @@ When `--full` flag is used or user opts for full version, collect extended narra
 
 ## Notes
 
-- Stories are automatically available to `/content-repurpose`
+- Stories are automatically available to `/generate-content`
 - Use `/sync-brain-dumps` to pull stories added via Notion mobile
 - Review `config/personal-context.yaml` to see all stored context
 - **Aim for 20-30 stories** with good theme coverage across pillars

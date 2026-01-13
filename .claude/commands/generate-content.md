@@ -2,24 +2,24 @@
 description: Transform content into LinkedIn posts, threads, and newsletter snippets
 ---
 
-# /content-repurpose
+# /generate-content
 
 Transform existing content into platform-optimized formats while preserving authentic voice.
 
 ## Usage
 
 ```
-/content-repurpose <source> [options]
+/generate-content [source] [options]
 ```
 
 ## Parameters
 
-### Required
+### Optional
 - `<source>`: Path to source content OR Notion page URL
+  - If omitted, suggests most recent file from `2-research/`
   - Local file: `2-research/market-briefs/2026-01-06-market-brief.md`
   - Notion page: `https://notion.so/...`
 
-### Optional
 - `--platforms`: Target platforms (default: all)
   - `linkedin` - LinkedIn post format
   - `twitter` - Twitter/X thread format
@@ -41,6 +41,7 @@ This command uses **Task tool delegation** to the `content-agent`.
 Orchestrator (this command)     →     Agents
 ─────────────────────────────────────────────────────────
 1. Parse parameters
+1.5. Smart source selection (if no source provided)
 2. Load voice-profile.yaml
 3. Load personal-context.yaml
 4. Load source content
@@ -55,14 +56,39 @@ Orchestrator (this command)     →     Agents
 
 ## Execution Steps
 
-### Step 1: Load Configuration (Orchestrator)
+### Step 1: Parse Parameters (Orchestrator)
+
+Parse command arguments for source path and options.
+
+### Step 1.5: Smart Source Selection (if no source provided)
+
+If `<source>` parameter is empty or not provided:
+
+1. Scan `2-research/` recursively for all `.md` files
+2. Sort by file modification time (newest first)
+3. Select the most recent file
+4. Use AskUserQuestion tool to confirm:
+
+   Question: "Use this source for content generation?"
+   Header: "Source"
+   Options:
+   - Label: "Yes, use this file"
+     Description: "{filename} (modified {relative_time})"
+   - Label: "No, I'll provide a path"
+     Description: "Enter a different source file or Notion URL"
+
+5. If user selects "Yes" → set `<source>` to the auto-detected path
+6. If user selects "Other" → use the path they provide
+7. Continue to Step 2 with resolved `<source>`
+
+### Step 2: Load Configuration (Orchestrator)
 
 Read these config files:
 - `config/voice-profile.yaml` - Get tone, vocabulary, patterns
 - `config/personal-context.yaml` - Get stories, influences
 - `config/notion-mapping.yaml` - Get content_calendar database ID
 
-### Step 2: Load Source Content (Orchestrator)
+### Step 3: Load Source Content (Orchestrator)
 
 If local path:
 ```
@@ -74,7 +100,7 @@ If Notion URL:
 Use mcp__notion__notion-fetch with page ID extracted from URL
 ```
 
-### Step 3: Extract Source Metadata (Orchestrator)
+### Step 4: Extract Source Metadata (Orchestrator)
 
 If source is an intelligence report (contains "Source Log" or "Sources" section):
 1. Parse the "Sources" table or "Source Log" section for URLs
@@ -99,7 +125,7 @@ If source is raw content without source tracking:
 - Set `origin` to the source path
 - Set `original_sources` to empty array `[]`
 
-### Step 4: Identify Relevant Themes (Orchestrator)
+### Step 5: Identify Relevant Themes (Orchestrator)
 
 Analyze source content to extract:
 - Main thesis
@@ -107,7 +133,7 @@ Analyze source content to extract:
 - Match against story themes in personal-context.yaml
 - Select 1-2 relevant stories that could be woven in
 
-### Step 5: Invoke Content Agent (Task Tool)
+### Step 6: Invoke Content Agent (Task Tool)
 
 ```
 Task tool call:
@@ -130,7 +156,7 @@ Task tool call:
           "origin": "{source path or Notion URL}",
           "title": "{extracted title}",
           "date": "{date if available}",
-          "original_sources": [{url, name} objects from Step 3]
+          "original_sources": [{url, name} objects from Step 4]
         },
         "platforms": {from parameter or ["linkedin", "twitter", "newsletter"]},
         "variations": {from parameter or 2},
@@ -151,7 +177,7 @@ Task tool call:
       Return valid JSON matching the output schema. Ensure `sources_referenced` is populated on each platform output.
 ```
 
-### Step 6: Process Agent Output (Orchestrator)
+### Step 7: Process Agent Output (Orchestrator)
 
 The content-agent returns:
 - `linkedin[]` - LinkedIn post variations with hook, body, cta, hashtags, sources_referenced
@@ -159,7 +185,7 @@ The content-agent returns:
 - `newsletter[]` - Newsletter snippet with intro, content, takeaways, sources_referenced
 - `source_analysis` - Main thesis, key points, matched stories
 
-### Step 7: Write Output Files (Orchestrator)
+### Step 8: Write Output Files (Orchestrator)
 
 Create output folders for each platform: `3-content/{platform}/{YYYY-MM-DD}-{slug}/`
 
@@ -300,12 +326,12 @@ Write files to platform-specific folders:
 Review each file and publish when ready.
 ```
 
-### Step 8: Write Agent Log (Orchestrator)
+### Step 9: Write Agent Log (Orchestrator)
 
 Write to: `system/logs/{YYYY-MM-DD}-content-agent.json`
 Include: input, output, timestamp
 
-### Step 9: Sync to Notion Content Calendar (sync-agent)
+### Step 10: Sync to Notion Content Calendar (sync-agent)
 
 For each generated piece:
 
@@ -459,7 +485,7 @@ dont_retry_on:
 
 ### Scenario: Source File Not Found
 ```markdown
-> ❌ **SOURCE NOT FOUND**
+> **SOURCE NOT FOUND**
 > Could not read: {source_path}
 >
 > Please verify the path exists and try again.
@@ -468,14 +494,14 @@ dont_retry_on:
 ### Scenario: Voice Profile Missing
 Proceed with default voice (warn user):
 ```markdown
-> ⚠️ **VOICE PROFILE UNAVAILABLE**
+> **VOICE PROFILE UNAVAILABLE**
 > Using default voice settings. Run `/voice-calibrate` to personalize.
 ```
 
 ### Scenario: Personal Context Empty
 Generate without stories:
 ```markdown
-> ℹ️ **NO STORIES AVAILABLE**
+> **NO STORIES AVAILABLE**
 > Content generated without personal stories.
 > Run `/add-story` to add authenticity through personal context.
 ```
@@ -483,7 +509,7 @@ Generate without stories:
 ### Scenario: One Platform Fails
 Generate others successfully:
 ```markdown
-> ⚠️ **PARTIAL GENERATION**
+> **PARTIAL GENERATION**
 > Twitter thread generation failed.
 > LinkedIn and Newsletter content generated successfully.
 ```
@@ -491,7 +517,7 @@ Generate others successfully:
 ### Scenario: Notion Sync Fails
 Save locally, continue:
 ```markdown
-**Notion Sync**: ❌ Content saved locally only.
+**Notion Sync**: Content saved locally only.
 Manually add to content calendar or retry later.
 ```
 

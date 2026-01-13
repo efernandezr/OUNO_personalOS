@@ -280,7 +280,7 @@ Ask a colleague or friend:
 | `/add-story` | Add a new story with templates |
 | `/add-story --full` | Add story with extended narrative |
 | `/sync-brain-dumps` | Pull stories from Notion mobile captures |
-| `/content-repurpose` | Uses your stories in content generation |
+| `/generate-content` | Uses your stories in content generation |
 | `/voice-calibrate` | Updates voice profile (run after adding stories) |
 
 ---
@@ -294,5 +294,5 @@ You have good personal context when:
 - [ ] Mix of transformation, failure, and milestone stories
 - [ ] Stories have specific details (names, numbers, dates)
 - [ ] Each story has a clear, universal lesson
-- [ ] `/content-repurpose` naturally weaves in your stories
+- [ ] `/generate-content` naturally weaves in your stories
 - [ ] Your content sounds like YOU, not generic AI output

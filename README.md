@@ -224,25 +224,28 @@ Pull brain dumps from Notion to local storage. Useful for backing up mobile capt
 
 ---
 
-### `/content-repurpose`
+### `/generate-content`
 
 Transform existing content into platform-optimized formats while preserving authentic voice.
 
 ```bash
-# Repurpose from local file
-/content-repurpose 2-research/market-briefs/2026-01-06-market-brief.md
+# Auto-detect most recent source (will prompt for confirmation)
+/generate-content
 
-# Repurpose from Notion page
-/content-repurpose https://notion.so/your-page-url
+# Generate from specific local file
+/generate-content 2-research/market-briefs/2026-01-06-market-brief.md
+
+# Generate from Notion page
+/generate-content https://notion.so/your-page-url
 
 # Target specific platforms
-/content-repurpose source.md --platforms linkedin,twitter
+/generate-content source.md --platforms linkedin,twitter
 
 # Generate more variations
-/content-repurpose source.md --variations 3
+/generate-content source.md --variations 3
 
 # Set specific tone
-/content-repurpose source.md --tone provocative
+/generate-content source.md --tone provocative
 ```
 
 **Output:** Platform-specific folders in `3-content/`:
@@ -675,7 +678,7 @@ Agent outputs are validated against schemas defined in `.claude/utils/schemas.js
 /brain-dump-analysis --timeframe week
 
 # 4. Pick a topic and generate content
-/content-repurpose 2-research/analysis/2026-01-06-brain-analysis.md --platforms linkedin
+/generate-content 2-research/analysis/2026-01-06-brain-analysis.md --platforms linkedin
 ```
 
 ### Weekly Intelligence Review
@@ -732,7 +735,7 @@ For best results, structure your brain dumps like this:
 | `/market-intelligence --deep` | < 5 minutes (incl. deep research) |
 | `/daily-brief` | < 2 minutes |
 | `/brain-dump-analysis` | < 3 minutes |
-| `/content-repurpose` | < 2 minutes |
+| `/generate-content` | < 2 minutes |
 | `/sync-brain-dumps` | < 1 minute |
 | `/deep-research` | < 3 minutes |
 | `/perplexity-budget` | < 5 seconds |

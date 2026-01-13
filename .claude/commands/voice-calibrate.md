@@ -341,7 +341,7 @@ Write to: `2-research/analysis/{YYYY-MM-DD}-voice-calibration.md`
 
 {If confidence high:}
 1. Voice profile is well-calibrated
-2. Run `/content-repurpose` to test new settings
+2. Run `/generate-content` to test new settings
 3. Re-calibrate quarterly or after voice evolution
 ```
 

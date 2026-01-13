@@ -59,7 +59,7 @@ See `config/voice-profile.yaml` for detailed voice specifications.
   - `--deep [topic]` - Add deep research for comprehensive analysis
 - `/daily-brief` - Generate morning intelligence brief
 - `/brain-dump-analysis` - Analyze notes for patterns and opportunities
-- `/content-repurpose` - Transform content for different platforms
+- `/generate-content` - Transform content for different platforms
 - `/deep-research [topic]` - On-demand comprehensive deep research
 
 ### Utility Commands
@@ -110,7 +110,7 @@ PersonalOS uses **Task tool delegation** to specialized agents defined in `.clau
 |-------|---------|-------|---------|
 | `intelligence-agent` | Web scraping + trend synthesis | sonnet | `/market-intelligence`, `/daily-brief` |
 | `pattern-agent` | Note analysis + theme extraction | sonnet | `/brain-dump-analysis` |
-| `content-agent` | Voice-matched content generation | sonnet | `/content-repurpose` |
+| `content-agent` | Voice-matched content generation | sonnet | `/generate-content` |
 | `voice-calibration-agent` | Analyze samples for voice patterns | sonnet | `/voice-calibrate` |
 | `sync-agent` | Notion read/write operations | haiku | All commands (Notion sync) |
 | `sync-brain-dumps-agent` | Pull brain dumps from Notion | haiku | `/sync-brain-dumps` |
