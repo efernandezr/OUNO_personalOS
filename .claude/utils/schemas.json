@@ -275,9 +275,91 @@
       }
     },
 
+    "content-analysis-agent": {
+      "type": "object",
+      "required": ["source_analysis", "recommended_stories", "platform_differentiation", "tone_recommendation", "analysis_timestamp"],
+      "properties": {
+        "source_analysis": {
+          "type": "object",
+          "required": ["main_thesis", "key_points", "content_type", "source_tracking"],
+          "properties": {
+            "main_thesis": { "type": "string", "minLength": 10 },
+            "key_points": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "data_points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["fact"],
+                "properties": {
+                  "fact": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            },
+            "content_type": { "type": "string", "enum": ["data-heavy", "opinion", "experience-based", "news", "framework"] },
+            "source_tracking": {
+              "type": "object",
+              "required": ["original_sources"],
+              "properties": {
+                "original_sources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["url", "name"],
+                    "properties": {
+                      "url": { "type": "string" },
+                      "name": { "type": "string" },
+                      "key_contribution": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "recommended_stories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "relevance_score", "recommendation"],
+            "properties": {
+              "title": { "type": "string" },
+              "relevance_score": { "type": "number", "minimum": 0, "maximum": 1 },
+              "relevance_reason": { "type": "string" },
+              "recently_used": { "type": "boolean" },
+              "usage_count_last_5": { "type": "integer", "minimum": 0 },
+              "recommendation": { "type": "string", "enum": ["use", "deprioritize", "skip"] },
+              "recommendation_reason": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        },
+        "platform_differentiation": {
+          "type": "object",
+          "required": ["linkedin_angle", "newsletter_angle", "twitter_angle"],
+          "properties": {
+            "linkedin_angle": { "type": "string", "minLength": 10 },
+            "newsletter_angle": { "type": "string", "minLength": 10 },
+            "twitter_angle": { "type": "string", "minLength": 10 }
+          }
+        },
+        "tone_recommendation": {
+          "type": "object",
+          "required": ["linkedin", "newsletter", "twitter", "reasoning"],
+          "properties": {
+            "linkedin": { "type": "string", "enum": ["educational", "provocative", "storytelling"] },
+            "newsletter": { "type": "string", "enum": ["educational", "provocative", "storytelling"] },
+            "twitter": { "type": "string", "enum": ["educational", "provocative", "storytelling"] },
+            "reasoning": { "type": "string" }
+          }
+        },
+        "analysis_timestamp": { "$ref": "#/definitions/isoTimestamp" }
+      }
+    },
+
     "content-agent": {
       "type": "object",
-      "required": ["source_analysis", "source_reference", "generation_timestamp"],
+      "required": ["source_reference", "generation_timestamp"],
       "properties": {
         "source_reference": {
           "type": "object",
@@ -378,6 +460,7 @@
     },
 
     "sync-agent": {
+      "description": "Union schema: read/write/query/update operations return the base fields; sync_to_local returns the sync fields. Both share success and operation.",
       "type": "object",
       "required": ["success", "operation"],
       "properties": {
@@ -398,16 +481,10 @@
         },
         "created_ids": { "type": "array", "items": { "type": "string" } },
         "updated_count": { "type": "integer", "minimum": 0 },
-        "error": { "type": ["string", "null"] }
-      }
-    },
-
-    "sync-brain-dumps-agent": {
-      "type": "object",
-      "required": ["synced", "skipped", "errors", "total_synced", "total_skipped", "sync_timestamp"],
-      "properties": {
+        "error": { "type": ["string", "null"] },
         "synced": {
           "type": "array",
+          "description": "sync_to_local only: list of synced files",
           "items": {
             "type": "object",
             "required": ["title", "date", "local_path", "notion_id"],
@@ -421,6 +498,7 @@
         },
         "skipped": {
           "type": "array",
+          "description": "sync_to_local only: list of skipped entries",
           "items": {
             "type": "object",
             "required": ["title", "reason"],
@@ -430,10 +508,10 @@
             }
           }
         },
-        "errors": { "type": "array", "items": { "type": "string" } },
-        "total_synced": { "type": "integer", "minimum": 0 },
-        "total_skipped": { "type": "integer", "minimum": 0 },
-        "sync_timestamp": { "$ref": "#/definitions/isoTimestamp" }
+        "errors": { "type": "array", "description": "sync_to_local only", "items": { "type": "string" } },
+        "total_synced": { "type": "integer", "description": "sync_to_local only", "minimum": 0 },
+        "total_skipped": { "type": "integer", "description": "sync_to_local only", "minimum": 0 },
+        "sync_timestamp": { "$ref": "#/definitions/isoTimestamp", "description": "sync_to_local only" }
       }
     },
 
@@ -524,9 +602,11 @@
     "instructions": "To validate agent output, use the schema corresponding to the agent name from agents.{agent-name}. Validation should check: 1) Required fields present, 2) Field types match, 3) Enums contain valid values, 4) Arrays meet min/max constraints. 5) All source citations have url and name.",
     "source_requirements": {
       "intelligence-agent": "Every insight must have source.url and source.name. Breaking news must have sources[] array. Trends must have evidence_sources[] with 2+ items.",
+      "content-analysis-agent": "source_analysis.source_tracking.original_sources must preserve all input sources. recommended_stories must have at least 1 item.",
       "content-agent": "source_reference is required. Each platform output must include sources_referenced[] array.",
       "pattern-agent": "source_notes[] is required. Each theme must have source_note_ids[] linking to source_notes."
     },
+    "sync-agent-note": "sync-agent uses a union schema: for read/write/query/update operations, validate success+operation+entries/created_ids. For sync_to_local, validate success+operation+synced+skipped+errors+total_synced+total_skipped+sync_timestamp.",
     "error_handling": "If validation fails, return error with: { agent: 'agent-name', errors: [{ field: 'path.to.field', message: 'description' }] }. Retry agent execution (max 2) for missing required source fields."
   }
 }

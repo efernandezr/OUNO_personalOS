@@ -12,74 +12,29 @@ View detailed Perplexity API budget status, including regular queries and deep r
 /perplexity-budget
 ```
 
-No parameters required. Displays current month's budget status.
-
-## Prerequisites
-
-- Perplexity must be configured (`./scripts/enable-perplexity.sh`)
-- `config/research.yaml` exists with budget settings
-- `system/cache/perplexity/usage.yaml` exists with usage tracking
+No parameters. Displays current month's budget status directly to terminal (no file output).
 
 ## Execution Steps
 
 ### Step 1: Check Configuration
 
-1. Check if `config/research.yaml` exists
-2. If not exists, display:
-   ```
-   Perplexity is not configured.
-   Run ./scripts/enable-perplexity.sh to enable real-time intelligence.
-   ```
-   Exit command.
+If `config/research.yaml` doesn't exist: display "Perplexity is not configured. Run `./scripts/enable-perplexity.sh`" and exit.
 
 ### Step 2: Load Configuration and Usage
 
-Read these files:
-- `config/research.yaml` - Get budget limits:
-  ```yaml
-  budget:
-    monthly_limit_usd: 25.00        # Regular queries
-    alert_threshold_pct: 80
-    deep_research:
-      monthly_limit_usd: 20.00      # Deep research
-      alert_threshold_pct: 50
-  ```
+Read: `config/research.yaml` (budget limits, alert thresholds), `system/cache/perplexity/usage.yaml` (current usage).
 
-- `system/cache/perplexity/usage.yaml` - Get current usage:
-  ```yaml
-  current_month: "2026-01"
-  regular:
-    queries_count: 15
-    estimated_cost_usd: 0.35
-    last_updated: "2026-01-11T10:30:00Z"
-  deep_research:
-    queries_count: 2
-    estimated_cost_usd: 8.50
-    last_updated: "2026-01-10T14:00:00Z"
-    history: [...]
-  total_cost_usd: 8.85
-  budget_exceeded: false
-  deep_research_budget_exceeded: false
-  ```
+If usage.yaml doesn't exist: show "No usage recorded yet" with budget limits table and exit.
+
+If usage.yaml has a different `current_month` than current: show "New month! Usage has been reset."
 
 ### Step 3: Calculate Status
 
-For each budget category:
-```
-remaining = limit - used
-pct_used = (used / limit) * 100
-pct_remaining = 100 - pct_used
+For each budget category, calculate: remaining, pct_used, pct_remaining.
 
-status_emoji:
-  - pct_used >= 100: "🔴 Budget Exceeded"
-  - pct_used >= alert_threshold: "⚠️ Alert Threshold"
-  - pct_used >= 50: "🟡 Moderate Usage"
-  - else: "🟢 OK"
-```
+Status emoji: `>= 100%` → "🔴 Budget Exceeded", `>= alert_threshold` → "⚠️ Alert Threshold", `>= 50%` → "🟡 Moderate", else → "🟢 OK"
 
 ### Step 4: Format Output
-
-Display formatted budget report:
 
 ```markdown
 # Perplexity Budget Status
@@ -87,173 +42,70 @@ Display formatted budget report:
 ## Current Month: {month_name} {year}
 
 ### Budget Summary
-
 | Category | Used | Limit | Remaining | Status |
 |----------|------|-------|-----------|--------|
-| Regular Queries | ${regular.used} | ${regular.limit} | ${regular.remaining} ({regular.pct_remaining}%) | {status_emoji} |
-| Deep Research | ${deep.used} | ${deep.limit} | ${deep.remaining} ({deep.pct_remaining}%) | {status_emoji} |
-| **Total** | **${total.used}** | **${total.limit}** | **${total.remaining}** | |
+| Regular Queries | ${used} | ${limit} | ${remaining} ({pct}%) | {emoji} |
+| Deep Research | ${used} | ${limit} | ${remaining} ({pct}%) | {emoji} |
+| **Total** | **${total}** | **${total_limit}** | **${total_remaining}** | |
 
 ### Alert Thresholds
-
-- Regular queries: Alert at {regular.alert_threshold}% (${regular.alert_amount})
-- Deep research: Confirmation required above {deep.alert_threshold}% (${deep.alert_amount})
+- Regular: alert at {pct}% (${amount})
+- Deep research: confirmation at {pct}% (${amount})
 
 ---
 
 ### Regular Query Usage
-
 | Metric | Value |
 |--------|-------|
-| Queries this month | {regular.queries_count} |
-| Estimated cost | ${regular.estimated_cost_usd} |
-| Last query | {regular.last_updated or "Never"} |
-
-**Cost estimate**: ~$0.005 per search, ~$0.02 per reasoning query
+| Queries this month | {count} |
+| Estimated cost | ${cost} |
+| Last query | {date or "Never"} |
 
 ---
 
 ### Deep Research Usage
-
 | Metric | Value |
 |--------|-------|
-| Reports this month | {deep.queries_count} |
-| Estimated cost | ${deep.estimated_cost_usd} |
-| Last research | {deep.last_updated or "Never"} |
+| Reports this month | {count} |
+| Estimated cost | ${cost} |
+| Last research | {date or "Never"} |
 
-**Cost estimate**: ~$3-5 per deep research report (varies by topic complexity)
-
-{If deep_research.history not empty:}
-#### Research History (This Month)
-
+{If history not empty:}
+#### Research History
 | Date | Topic | Est. Cost |
-|------|-------|-----------|
-{For each entry in deep_research.history:}
-| {entry.date} | {entry.topic} | ~${entry.cost} |
+{history entries}
 
 ---
 
 ### Budget Projections
-
-Based on current usage rate:
-
-**Regular Queries:**
-- Daily average: ${daily_avg_regular}
-- Projected month-end: ${projected_regular}
-- {If projected > limit: "⚠️ May exceed budget by ${overage}"}
-
-**Deep Research:**
-- Average per report: ${avg_per_report}
-- Remaining capacity: ~{remaining_reports} reports
-- {If deep.pct_used > 50: "💡 Tip: Use /market-intelligence --deep sparingly"}
+**Regular**: Daily avg ${avg}, projected ${projected}{overage warning if needed}
+**Deep Research**: Avg ${avg}/report, ~{remaining} reports remaining
 
 ---
 
 ### Quick Reference
+| Command | Est. Cost |
+|---------|-----------|
+| /daily-brief | ~$0.01-0.02 |
+| /market-intelligence | ~$0.02-0.05 |
+| /market-intelligence --deep | ~$3-8 |
+| /deep-research | ~$3-5 |
 
-| Command | Perplexity Usage | Est. Cost |
-|---------|------------------|-----------|
-| /daily-brief | 1-2 queries | ~$0.01-0.02 |
-| /market-intelligence | 2-5 queries | ~$0.02-0.05 |
-| /market-intelligence --deep | 2-5 + deep research | ~$3-8 |
-| /deep-research | 1 deep research | ~$3-5 |
-
----
-
-### Budget Management
-
-**To adjust budgets**, edit `config/research.yaml`:
-```yaml
-budget:
-  monthly_limit_usd: 25.00      # Regular queries
-  deep_research:
-    monthly_limit_usd: 20.00    # Deep research
-```
-
-**To skip Perplexity** for a single command:
-```
-/market-intelligence --no-real-time
-/daily-brief --no-real-time
-```
-
-**Budget resets**: 1st of each month
+Budget resets: 1st of each month
 
 ---
-
 *Generated by PersonalOS | perplexity-budget | {date}*
 ```
 
-### Step 5: Handle Edge Cases
-
-#### No Usage File
-
-If `system/cache/perplexity/usage.yaml` doesn't exist:
-
-```markdown
-# Perplexity Budget Status
-
-## Current Month: {month_name} {year}
-
-No usage recorded yet. Perplexity has not been used this month.
-
-### Budget Limits
-
-| Category | Limit |
-|----------|-------|
-| Regular Queries | ${regular_limit}/month |
-| Deep Research | ${deep_limit}/month |
-| **Total** | **${total_limit}/month** |
-
-Run `/market-intelligence` or `/daily-brief` to start using Perplexity.
-```
-
-#### Month Rollover
-
-If `usage.yaml` has a different month than current:
-
-1. The month has rolled over
-2. Display message: "New month! Usage has been reset."
-3. Note: Actual reset happens when next command writes to usage.yaml
-
-## Output
-
-This command outputs directly to the terminal. No file is written.
-
 ## Related Commands
 
-- `/market-intelligence` - Uses regular Perplexity queries
-- `/market-intelligence --deep` - Uses deep research
-- `/deep-research` - Standalone deep research
-- `/daily-brief` - Uses light Perplexity queries
+- `/market-intelligence` — regular + optional deep queries
+- `/deep-research` — standalone deep research
+- `/daily-brief` — light Perplexity queries
 
 ## Budget Tips
 
-1. **Cache saves money**: Same-day queries hit cache (24h TTL)
-2. **--no-real-time**: Skip Perplexity entirely when not needed
-3. **Deep research**: Use selectively, costs ~$3-5 per report
-4. **Check weekly**: Run this command to stay on track
-
-## Example Output
-
-```
-# Perplexity Budget Status
-
-## Current Month: January 2026
-
-### Budget Summary
-
-| Category | Used | Limit | Remaining | Status |
-|----------|------|-------|-----------|--------|
-| Regular Queries | $0.35 | $25.00 | $24.65 (98%) | 🟢 OK |
-| Deep Research | $8.50 | $20.00 | $11.50 (58%) | ⚠️ Alert Threshold |
-| **Total** | **$8.85** | **$45.00** | **$36.15** | |
-
-### Deep Research Usage
-
-| Date | Topic | Est. Cost |
-|------|-------|-----------|
-| 2026-01-08 | AI Agents in Marketing | ~$4.25 |
-| 2026-01-10 | MCP Ecosystem | ~$4.25 |
-
-Budget resets: February 1, 2026
-```
+1. Cache saves money (24h TTL)
+2. `--no-real-time` skips Perplexity entirely
+3. Deep research: use selectively (~$3-5/report)
+4. Check weekly with this command

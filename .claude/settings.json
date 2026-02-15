@@ -5,5 +5,8 @@
       "Write",
       "Bash"
     ]
+  },
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
   }
 }

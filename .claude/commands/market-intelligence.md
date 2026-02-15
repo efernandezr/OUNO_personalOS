@@ -14,379 +14,105 @@ Scan configured sources for AI marketing insights, trends, and developments.
 
 ## Parameters (Optional)
 
-- `--timeframe`: How far back to scan (default: "24h")
-  - `24h` - Last 24 hours
-  - `48h` - Last 48 hours
-  - `week` - Last 7 days
-
-- `--depth`: Scan depth (default: "standard")
-  - `quick` - Top 5 high-priority sources only
-  - `standard` - All high and medium priority sources
-  - `deep` - All sources including low priority
-
+- `--timeframe`: How far back to scan (default: "24h") — `24h`, `48h`, `week`
+- `--depth`: Scan depth (default: "standard") — `quick` (top 5 high-priority), `standard` (high + medium), `deep` (all sources)
 - `--topics`: Override default topics (comma-separated)
-
 - `--no-real-time`: Skip Perplexity queries, use only configured sources
-  - Use when you want faster execution without real-time discovery
-  - Budget is not consumed when this flag is set
-
 - `--force-fresh`: Ignore Perplexity cache and fetch fresh data
-  - Use sparingly as it consumes more budget
-  - Only affects Perplexity queries, not Firecrawl
-
-- `--deep [topic]`: Enable deep research mode using sonar-deep-research model
+- `--deep [topic]`: Enable deep research mode using sonar-deep-research
   - Without value: Smart-pick hottest topic from scan results, ask for confirmation
-  - With value (e.g., `--deep "AI Agents"`): Use specified topic directly
-  - Generates comprehensive analysis section in the report
+  - With value: Use specified topic directly
   - Uses separate budget cap ($20/month default)
-  - Cost warning shown based on budget threshold (confirm if >50% used)
 
-## Orchestration Pattern
+## Orchestration Flow
 
-This command uses **Task tool delegation** to the `intelligence-agent`.
-
-**IMPORTANT**: Perplexity calls are made at the orchestrator level (not in sub-agent) because sub-agents don't have MCP access.
+**IMPORTANT**: Perplexity calls run at orchestrator level (sub-agents don't have MCP access).
 
 ```
-Orchestrator (this command)     →     intelligence-agent
+Orchestrator                     →     intelligence-agent
 ─────────────────────────────────────────────────────────
 1. Parse parameters (incl. --no-real-time, --deep)
-2. Load configs (topics, sources, research)
+2. Load configs (topics, sources, research, notion-mapping)
 3. Filter sources by depth
-4. CHECK PERPLEXITY CACHE (orchestrator)
-5. CALL PERPLEXITY MCP (orchestrator, if cache miss)
-6. WRITE CACHE + UPDATE USAGE (orchestrator)
+4-6. Perplexity: cache check → MCP calls → write cache + usage
 7. Construct agent input (incl. perplexity_results)
-                                 →    8. Use pre-fetched Perplexity results
-                                 →    9. Scan sources (Firecrawl only)
-                                 →    10. Synthesis
-                                 →    11. Return JSON
-12. Receive JSON output          ←
-13. [IF --deep] DEEP RESEARCH (see Step 6.5)
-14. Format markdown (incl. Deep Research if --deep)
-15. Write files
+                                 →    8-11. Scan sources, synthesize, return JSON
+12. Receive + validate JSON      ←
+13. [IF --deep] Deep research (see Step 5.5)
+14. Format markdown
+15. Write files + agent log
 16. Auto-add discovered sources
 17. Sync to Notion (sync-agent)
-18. Update STATUS.md
 ```
-
-## Tool Enforcement
-
-**At Orchestrator Level** (this command):
-- **Perplexity MCP** for real-time discovery (called directly by orchestrator, NOT sub-agent)
-- Cache read/write operations
-- Usage tracking updates
-
-**At Agent Level** (intelligence-agent):
-- **Firecrawl MCP is REQUIRED** for web scraping (`mcp__firecrawl__firecrawl_scrape`)
-- **WebSearch is NOT acceptable** as the primary scanning tool
-- The agent MUST track tool usage in `scan_metadata` output field
-- Agent receives pre-fetched Perplexity results - should NOT call Perplexity MCP
-
-Include this reminder in the agent prompt:
-> "CRITICAL: Use Firecrawl MCP for all web scraping. Perplexity results are pre-fetched - use them directly, do NOT call Perplexity MCP."
 
 ## Execution Steps
 
-### Step 1: Load Configuration (Orchestrator)
+### Step 1: Load Configuration
 
-Read these config files:
-- `config/topics.yaml` - Extract topics array with name, priority, keywords
-- `config/sources.yaml` - Extract sources array with url, type, priority, focus
-- `config/notion-mapping.yaml` - Get `databases.market_intelligence` ID
-- `config/research.yaml` - Get Perplexity settings (if exists)
-  - If file doesn't exist, set `perplexity_enabled: false`
-  - Extract: `enabled`, `budget.monthly_limit_usd`, `cache.ttl_hours`, `queries.max_queries_per_market_intel`
+Read: `config/topics.yaml`, `config/sources.yaml`, `config/notion-mapping.yaml`, `config/research.yaml` (if exists, else `perplexity_enabled: false`).
 
-### Step 2: Filter Sources (Orchestrator)
+### Step 2: Filter Sources
 
-Filter sources by depth parameter:
-- `quick`: Only sources where priority == "high" (max 5)
-- `standard`: Sources where priority in ["high", "medium"]
-- `deep`: All sources
+- `quick`: priority == "high" (max 5)
+- `standard`: priority in ["high", "medium"]
+- `deep`: all sources
 
-### Step 2.5: Real-Time Discovery (Orchestrator) - PERPLEXITY
+### Step 2.5: Real-Time Discovery (Perplexity)
 
-**CRITICAL**: This step runs at orchestrator level because sub-agents don't have MCP access.
+Skip if: `--no-real-time`, research.yaml missing/disabled, or budget exceeded.
 
-Skip this step if:
-- `--no-real-time` flag is set
-- `research.yaml` doesn't exist or `perplexity.enabled: false`
-- Budget exceeded (check `usage.yaml`)
+Follow **Cache Check** in `perplexity-procedures.md` with `cache_key = {YYYY-MM-DD}-{depth}-market-intel`.
 
-#### 2.5.1: Check Cache
+**Build Dynamic Queries from Topics**:
+1. Extract primary topic names from topics.yaml, join with commas
+2. Load query templates from research.yaml (`breaking_news`, `trend_discovery`)
+3. Call `mcp__perplexity__perplexity_search` for breaking news
+4. Call `mcp__perplexity__perplexity_reason` for trend discovery (standard/deep only)
 
-1. Generate cache key: `{YYYY-MM-DD}-{depth}-market-intel`
-2. Check for file: `system/cache/perplexity/queries/{cache_key}.json`
-3. If file exists AND timestamp < `cache_ttl_hours` old AND NOT `--force-fresh`:
-   - Read cached results
-   - Set `from_cache: true`
-   - Skip to Step 2.5.4
+Follow **Cache Write** and **Usage Update (Regular)** in `perplexity-procedures.md`.
 
-#### 2.5.2: Build Dynamic Queries from Topics
+Prepare `perplexity_results` using **Results Format** from `perplexity-procedures.md`.
 
-**Load Topics** from `config/topics.yaml`:
-```
-1. Read topics.yaml
-2. Extract primary topic names: ["AI for Marketing", "AI Agents", "Claude/Anthropic", "Marketing Automation"]
-3. Join with commas: "AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation"
-```
-
-**Load Query Templates** from `config/research.yaml`:
-```yaml
-query_templates:
-  breaking_news: "Latest news: {topics} {timeframe}"
-  trend_discovery: "Emerging trends in {topics} for enterprise {timeframe}"
-```
-
-#### 2.5.3: Call Perplexity MCP (if cache miss)
-
-**Breaking News Query** (use `mcp__perplexity__search`):
-```
-Template: research.yaml → query_templates.breaking_news
-Topics: primary topic names from topics.yaml
-Timeframe: "{current_month} {current_year}"
-
-Example: "Latest news: AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation January 2026"
-```
-
-**Trend Discovery Query** (use `mcp__perplexity__reason` for standard/deep only):
-```
-Template: research.yaml → query_templates.trend_discovery
-Topics: primary + secondary topic names for standard/deep depth
-
-Example: "Emerging trends in AI for Marketing, AI Agents, Claude/Anthropic, Marketing Automation, Enterprise AI for enterprise January 2026"
-```
-
-Extract from responses:
-- `breaking_news[]` - Title, summary, source URLs from citations
-- `trend_signals[]` - Trend name, evidence count, trajectory
-
-#### 2.5.4: Write Cache + Update Usage
-
-1. Write results to `system/cache/perplexity/queries/{cache_key}.json`:
-```json
-{
-  "timestamp": "{ISO timestamp}",
-  "ttl_hours": 24,
-  "query_type": "market-intelligence",
-  "depth": "{depth}",
-  "results": {
-    "breaking_news": [...],
-    "trend_signals": [...]
-  }
-}
-```
-
-2. Update `system/cache/perplexity/usage.yaml`:
-```yaml
-current_month: "{YYYY-MM}"
-regular:
-  queries_count: {increment by queries used}
-  estimated_cost_usd: {add ~$0.005 per search, ~$0.02 per reason}
-  last_updated: "{ISO timestamp}"
-total_cost_usd: {regular.estimated_cost_usd + deep_research.estimated_cost_usd}
-budget_exceeded: {true if regular.estimated_cost_usd >= budget.monthly_limit_usd}
-```
-
-#### 2.5.5: Prepare Perplexity Results for Agent
-
-```json
-{
-  "perplexity_results": {
-    "status": "success" | "from_cache" | "skipped" | "budget_exceeded" | "not_configured",
-    "breaking_news": [...],
-    "trend_signals": [...],
-    "queries_used": 0,
-    "from_cache": true | false,
-    "budget_remaining_pct": 85
-  }
-}
-```
-
-### Step 3: Construct Agent Input (Orchestrator)
+### Step 3: Construct Agent Input
 
 ```json
 {
   "mode": "full",
-  "timeframe": "{from parameter or '48h'}",
-  "depth": "{from parameter or 'standard'}",
+  "timeframe": "{parameter or '48h'}",
+  "depth": "{parameter or 'standard'}",
   "today_date": "{YYYY-MM-DD}",
   "topics": [/* from topics.yaml */],
-  "sources": [/* filtered from sources.yaml */],
-  "perplexity_results": {/* from Step 2.5, or null if skipped */}
+  "sources": [/* filtered */],
+  "perplexity_results": {/* from Step 2.5, or null */}
 }
 ```
 
-### Step 4: Invoke Intelligence Agent (Task Tool)
+### Step 4: Invoke Intelligence Agent
 
-```
-Task tool call:
-  - description: "Scan market intelligence sources"
-  - subagent_type: "general-purpose"
-  - model: "sonnet"
-  - prompt: |
-      You are the intelligence-agent for PersonalOS.
+Follow **Agent Invocation** in `agent-execution-guide.md` with:
+- Agent: `intelligence-agent`, Model: `sonnet`
+- Include in prompt: "CRITICAL: Use Firecrawl MCP for all web scraping. Perplexity results are pre-fetched - use them directly, do NOT call Perplexity MCP."
 
-      [Read and include full content of .claude/agents/intelligence-agent.md]
+Validate output per `agent-execution-guide.md` → **JSON Validation** against `schemas.json → agents.intelligence-agent`.
 
-      ## Your Task
+Required fields: `insights` (array), `trends` (array), `content_opportunities` (array), `sources_scanned` (int), `scan_timestamp`, `scan_metadata` (with `degraded_mode`).
 
-      Execute a market intelligence scan with this input:
+### Step 5.5: Deep Research (IF --deep flag)
 
-      ```json
-      {input JSON from Step 3, including perplexity_results}
-      ```
+#### Determine Topic
+- If `--deep "Topic"`: use directly
+- If `--deep` without value: Analyze agent output — count topic mentions across insights, weight by priority (High=3, Med=2, Low=1), present top pick via AskUserQuestion with options: Use suggested / Enter different / Skip
 
-      **NOTE**: Perplexity results have been pre-fetched by the orchestrator.
-      Use the provided `perplexity_results` directly - do NOT call Perplexity MCP.
-      Focus on Firecrawl scraping of configured sources and synthesis.
+#### Budget & Execution
+Follow **Budget Check (Deep Research)** in `perplexity-procedures.md`.
 
-      Return your response as valid JSON matching the output schema in the agent definition.
-```
+Execute: Call `mcp__perplexity__perplexity_research` with query template from research.yaml, `strip_thinking: true`.
 
-### Step 5: Process Agent Output (Orchestrator)
+Parse response into: executive_summary, market_landscape, key_players, emerging_patterns, strategic_implications, sources.
 
-The agent returns JSON with:
-- `real_time_intelligence` - Perplexity results (if enabled)
-  - `status` - "success", "skipped", "not_configured", "budget_exceeded", or "error"
-  - `breaking_news[]` - Real-time news items
-  - `trend_signals[]` - Emerging trends
-  - `sources_discovered[]` - New sources found
-  - `budget_remaining_pct` - Remaining budget percentage
-- `insights[]` - Scored and prioritized findings
-- `trends[]` - Cross-source patterns
-- `content_opportunities[]` - Actionable content ideas
-- `sources_scanned` - Count
-- `sources_failed[]` - URLs that failed
-- `scan_metadata` - Tool usage tracking (verify `primary_tool: "firecrawl"`)
+Follow **Usage Update (Deep Research)** in `perplexity-procedures.md`.
 
-### Step 5.5: Deep Research (Orchestrator) - IF `--deep` FLAG
-
-**Skip this step if** `--deep` flag was not provided.
-
-#### 5.5.1: Determine Topic
-
-**If `--deep "Topic Name"` was provided:**
-- Use the specified topic directly
-- Skip to 5.5.2
-
-**If `--deep` without value:**
-1. Analyze agent output to find most prominent topic:
-   - Count topic mentions across `insights[]`
-   - Weight by priority (High = 3, Medium = 2, Low = 1)
-   - Select topic with highest weighted count
-2. Present selection to user using AskUserQuestion:
-   ```
-   "Deep research topic suggestion: '{topic}' (mentioned {count} times in scan).
-
-   Options:
-   - Use suggested topic
-   - Enter different topic
-   - Skip deep research"
-   ```
-3. Wait for user response before proceeding
-
-#### 5.5.2: Check Budget and Show Warning
-
-1. Read `system/cache/perplexity/usage.yaml`
-2. Calculate deep research budget usage:
-   ```
-   used = deep_research.estimated_cost_usd
-   limit = research.yaml → budget.deep_research.monthly_limit_usd
-   pct_used = (used / limit) * 100
-   threshold = research.yaml → budget.deep_research.alert_threshold_pct
-   ```
-3. **If pct_used < threshold (default 50%):**
-   - Show info message: "Deep research: ~$3-5 estimated. Budget: ${used}/${limit} ({pct_used}% used)"
-   - Proceed automatically
-
-4. **If pct_used >= threshold:**
-   - Require confirmation using AskUserQuestion:
-     ```
-     "Deep research budget warning: {pct_used}% used (${used}/${limit}).
-     This query may cost ~$3-5. Proceed?"
-
-     Options:
-     - Yes, proceed
-     - No, skip deep research
-     ```
-   - Only proceed if user confirms
-
-5. **If budget exceeded (pct_used >= 100%):**
-   - Show error: "Deep research budget exceeded for this month."
-   - Skip deep research, continue with regular output
-
-#### 5.5.3: Execute Deep Research
-
-1. Load query template from `config/research.yaml`:
-   ```yaml
-   query_templates:
-     deep_research: "Comprehensive analysis of {topic}: current market landscape, key players and recent developments, emerging patterns and signals, strategic implications"
-   ```
-
-2. Call Perplexity deep research MCP:
-   ```
-   mcp__perplexity__perplexity_research
-
-   messages: [
-     {
-       role: "user",
-       content: "{query_template with {topic} replaced}"
-     }
-   ]
-   strip_thinking: true  # Save context tokens
-   ```
-
-3. Parse response and extract:
-   - `executive_summary` - First 2-3 sentences
-   - `market_landscape` - Current state analysis
-   - `key_players` - Major companies and moves
-   - `emerging_patterns` - Trends and signals
-   - `strategic_implications` - What it means
-   - `sources[]` - Citations from the research
-
-#### 5.5.4: Update Deep Research Usage
-
-Update `system/cache/perplexity/usage.yaml`:
-```yaml
-deep_research:
-  queries_count: {increment by 1}
-  estimated_cost_usd: {add ~$3-5 based on response length}
-  last_updated: "{ISO timestamp}"
-  history:
-    - date: "{today}"
-      topic: "{topic}"
-      cost: {estimated cost}
-```
-
-#### 5.5.5: Store Deep Research Results
-
-Store in variable for Step 6:
-```json
-{
-  "deep_research": {
-    "enabled": true,
-    "topic": "{topic}",
-    "executive_summary": "...",
-    "market_landscape": "...",
-    "key_players": "...",
-    "emerging_patterns": "...",
-    "strategic_implications": "...",
-    "sources": [...],
-    "cost_estimate": 4.25,
-    "budget_status": {
-      "used": 8.50,
-      "limit": 20.00,
-      "pct_used": 42.5
-    }
-  }
-}
-```
-
-### Step 6: Format Markdown Output (Orchestrator)
-
-Transform JSON into markdown format:
+### Step 6: Format Markdown Output
 
 ```markdown
 # Market Intelligence Brief
@@ -398,400 +124,105 @@ Transform JSON into markdown format:
 | **Report Type** | market-intelligence |
 | **Timeframe** | {timeframe} |
 | **Depth** | {depth} |
-| **Status** | {scan_metadata.degraded_mode ? "degraded" : "success"} |
+| **Status** | {degraded_mode ? "degraded" : "success"} |
 | **Sources Scanned** | {sources_scanned} |
 | **Real-Time** | {real_time_intelligence.status} |
-| **Deep Research** | {deep_research.enabled ? deep_research.topic : "none"} |
-| **Perplexity Budget** | Regular: ${regular_used}/${regular_limit} | Deep: ${deep_used}/${deep_limit} |
+| **Deep Research** | {deep_research.enabled ? topic : "none"} |
+| **Perplexity Budget** | Regular: ${used}/${limit} | Deep: ${used}/${limit} |
 
 ---
 
 {If deep_research.enabled:}
-## Deep Research: {deep_research.topic}
-
-> **Cost**: ~${deep_research.cost_estimate} | **Budget**: ${deep_research.budget_status.used}/${deep_research.budget_status.limit} ({deep_research.budget_status.pct_used}% used)
-
+## Deep Research: {topic}
+> **Cost**: ~${cost} | **Budget**: ${used}/${limit} ({pct}% used)
 ### Executive Summary
-
-{deep_research.executive_summary}
-
+{executive_summary}
 ### Market Landscape
-
-{deep_research.market_landscape}
-
+{market_landscape}
 ### Key Players & Developments
-
-{deep_research.key_players}
-
+{key_players}
 ### Emerging Patterns
-
-{deep_research.emerging_patterns}
-
+{emerging_patterns}
 ### Strategic Implications
-
-{deep_research.strategic_implications}
-
+{strategic_implications}
 ### Deep Research Sources
-
 | Source | URL |
 |--------|-----|
-{For each source in deep_research.sources:}
-| {source.title} | [{source.url}]({source.url}) |
+{sources table}
 
 ---
 
-{If real_time_intelligence.status == "not_configured":}
-> ℹ️ **REAL-TIME INTELLIGENCE NOT CONFIGURED**
-> To enable breaking news and trend discovery, run: `./scripts/enable-perplexity.sh`
-
-{If real_time_intelligence.status == "budget_exceeded":}
-> ⚠️ **PERPLEXITY BUDGET EXCEEDED**
-> Monthly budget of ${budget_limit_usd} reached. Real-time intelligence disabled.
-> Budget resets at the start of next month.
-
-{If real_time_intelligence.status == "error":}
-> ⚠️ **REAL-TIME INTELLIGENCE UNAVAILABLE**
-> {real_time_intelligence.status_reason}
-> Proceeding with configured sources only.
+{Status banners per perplexity-procedures.md}
 
 ## Real-Time Intelligence
-
-{If real_time_intelligence.status == "success":}
-**Budget Remaining**: {budget_remaining_pct}% | **Queries Used**: {queries_used} | **Cache Hits**: {cache_hits}
+{If status == "success":}
+**Budget Remaining**: {pct}% | **Queries Used**: {n} | **Cache Hits**: {n}
 
 ### Breaking News (Last 48h)
-
-{For each breaking_news item:}
-#### {title}
-{summary}
-
-**Sources**: {For each source in sources: [{source.name}]({source.url}), }
-
----
+{For each: title, summary, sources as inline links}
 
 ### Trend Signals
-
 | Trend | Evidence | Trajectory |
-|-------|----------|------------|
-{For each trend_signal:}
-| {trend} | {evidence_count} sources | {trajectory} |
+{trend_signals table}
 
 ### Sources Discovered
-
 | Source | Category | Action | Reason |
-|--------|----------|--------|--------|
-{For each sources_discovered:}
-| [{name}]({url}) | {category} | {action emoji} | {reason} |
-
-{action emoji: added = ✅, skipped_limit = ⏭️, skipped_duplicate = 🔄}
+{sources_discovered with action emoji: ✅ added, ⏭️ skipped_limit, 🔄 skipped_duplicate}
 
 ---
 
 ## Priority Updates
-
-{For each insight where priority == "High":}
-### {title}
-**Source**: [{source.name}]({source.url})
-**Topics**: {topics joined}
-
-{summary}
-
-**Content Angle**: {suggested_angle}
-
----
+{For each High priority insight: title, source link, topics, summary, content angle}
 
 ## Trend Analysis
-
-{For each trend:}
-### {name} ({trajectory})
-{evidence as bullet points}
-
-**Opportunity**: {content_opportunity}
+{For each trend: name, trajectory, evidence bullets, opportunity}
 
 ## Content Opportunities
-
 | Priority | Topic | Angle | Pillar |
-|----------|-------|-------|--------|
-{For each content_opportunity, sorted by urgency}
+{sorted by urgency}
 
 ## All Insights
-
-{For each insight where priority in ["Medium", "Low"]:}
-- **[{priority}]** [{title}]({source.url}) - {summary truncated to 100 chars}
+{Medium/Low insights as bullet list}
 
 ---
 
 ## Sources
-
-All sources referenced in this report:
-
 | Source | URL | Type |
-|--------|-----|------|
-{For each unique source in all insights + breaking_news:}
-| {source.name} | [{source.url}]({source.url}) | {source.type or "firecrawl"} |
+{all unique sources}
 
-{If sources_failed not empty:}
+{If sources_failed:}
 ### Failed Sources
-
 | Source | Error |
-|--------|-------|
-{For each failed in sources_failed:}
-| {failed.url} | {failed.reason} |
 
 ---
-
 *Generated by PersonalOS | intelligence-agent | {date}*
 ```
 
-### Step 7: Write Output Files (Orchestrator)
+### Step 7: Write Output Files
 
-1. Create output directory if needed: `2-research/market-briefs/`
-2. Write markdown to (choose based on `--deep` flag):
-   - **If `--deep` was used**: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief-deep-{topic-slug}.md`
-     - Example: `2026-01-10-1430-market-brief-deep-ai-agents.md`
-     - The `{topic-slug}` is the deep research topic in lowercase with spaces replaced by hyphens
-   - **Otherwise**: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief.md`
-     - Example: `2026-01-10-1430-market-brief.md`
-   - Include timestamp (24h format) to preserve multiple scans per day
-3. Write agent log to: `system/logs/{YYYY-MM-DD}-{HHMM}-intelligence-agent.json`
-   - Include: input, output, timestamp, duration
+- Markdown: `2-research/market-briefs/{YYYY-MM-DD}-{HHMM}-market-brief{-deep-{slug}}.md`
+- Agent log: `system/logs/{YYYY-MM-DD}-{HHMM}-intelligence-agent.json`
 
-### Step 7.5: Process Discovered Sources (Orchestrator)
+### Step 7.5: Process Discovered Sources
 
-If `real_time_intelligence.sources_discovered` contains entries with `action: "added"`:
+If `sources_discovered` has entries with `action: "added"`:
+- Read `config/sources.yaml`, append new entries with `added_by: "perplexity"`, `added_date`, `priority: "medium"`
+- Write updated sources.yaml
 
-1. Read current `config/sources.yaml`
-2. For each source with `action: "added"`:
-   - Add entry to sources.yaml:
-     ```yaml
-     - name: "{name}"
-       url: "{url}"
-       type: "{category}"
-       priority: "medium"
-       focus: []
-       added_by: "perplexity"
-       added_date: "{today}"
-       discovery_context: "{reason}"
-     ```
-3. Write updated sources.yaml
-4. Log additions to output
+### Step 8: Sync to Notion
 
-### Step 8: Sync to Notion (Orchestrator → sync-agent)
+Follow **Sync-Agent: Write** in `agent-execution-guide.md` for each High-priority insight:
+- Database: `market_intelligence`
+- Properties: Title, Date, Priority, Topics, Source, Summary, Content Potential, Status: "New", Deep Research: "__YES__" or "__NO__"
 
-For each insight where priority == "High":
+## Error Handling
 
-**Deep Research field logic:**
-- If `deep_research.enabled == true`: Set `"Deep Research": "__YES__"`
-- Otherwise: Set `"Deep Research": "__NO__"` (or omit the field)
-
-```
-Task tool call:
-  - description: "Sync insight to Notion"
-  - subagent_type: "general-purpose"
-  - model: "haiku"
-  - prompt: |
-      You are the sync-agent for PersonalOS.
-
-      [Read and include content of .claude/agents/sync-agent.md]
-
-      ## Your Task
-
-      Write this entry to Notion:
-
-      ```json
-      {
-        "operation": "write",
-        "database": "market_intelligence",
-        "database_id": "{from notion-mapping.yaml}",
-        "data": {
-          "properties": {
-            "Title": "{insight.title}",
-            "Date": "{today}",
-            "Priority": "{insight.priority}",
-            "Topics": {insight.topics},
-            "Source": "{insight.source_url}",
-            "Summary": "{insight.summary}",
-            "Content Potential": "{insight.content_potential}",
-            "Status": "New",
-            "Deep Research": "__YES__"
-          }
-        }
-      }
-      ```
-
-      **Note**: Set "Deep Research" to "__YES__" only if this scan used the --deep flag.
-      Use "__NO__" or omit the field for standard scans.
-```
+- Intelligence-agent fails: report error to user
+- Sync-agent fails: save locally, note "Notion sync failed"
+- \>50% sources failed: add `> ⚠️ **LIMITED INTELLIGENCE**` banner with failed source list
+- Always produce output with partial data
 
 ## Agent Reference
 
 - **Intelligence Agent**: `.claude/agents/intelligence-agent.md`
 - **Sync Agent**: `.claude/agents/sync-agent.md`
-
-## Error Handling
-
-- If intelligence-agent fails completely, report error to user
-- If sync-agent fails, save locally and note "Notion sync failed" in output
-- If >50% sources failed, add warning banner to output
-- Always produce output even with partial data
-
-## Retry Configuration
-
-### Firecrawl Operations (via intelligence-agent)
-```yaml
-max_retries: 3
-backoff:
-  initial: 1000  # 1 second
-  multiplier: 2  # exponential: 1s, 2s, 4s
-  max: 4000      # 4 seconds max
-retry_on:
-  - connection_error
-  - timeout
-  - status_5xx
-  - rate_limit (429)
-dont_retry_on:
-  - status_4xx (except 429)
-  - invalid_url
-  - access_denied
-```
-
-### Notion Sync Operations (via sync-agent)
-```yaml
-max_retries: 3
-backoff:
-  initial: 2000  # 2 seconds
-  multiplier: 2  # exponential: 2s, 4s, 8s
-  max: 8000      # 8 seconds max
-retry_on:
-  - connection_error
-  - timeout
-  - status_5xx
-  - rate_limit
-dont_retry_on:
-  - authentication_error
-  - invalid_database_id
-  - permission_denied
-```
-
-### Retry Pattern for Agent Invocation
-
-If intelligence-agent Task tool call fails:
-1. Log the error
-2. Wait `backoff.initial * (backoff.multiplier ^ attempt)` milliseconds
-3. Retry the Task tool call (up to max_retries)
-4. If all retries fail, proceed to partial results handling
-
-## JSON Validation
-
-After receiving agent output, validate against schema before processing.
-
-### Schema Reference
-```
-.claude/utils/schemas.json → agents.intelligence-agent
-```
-
-### Validation Steps
-
-1. **Parse JSON**: If agent returns malformed JSON:
-   - Log parsing error
-   - Retry agent invocation with note: "Previous response was not valid JSON. Return valid JSON only."
-   - Max 2 parse retries before failing
-
-2. **Validate required fields**: Check these exist:
-   - `insights` (array)
-   - `trends` (array)
-   - `content_opportunities` (array)
-   - `sources_scanned` (integer)
-   - `scan_timestamp` (ISO string)
-   - `scan_metadata` (object with `degraded_mode`)
-
-3. **Validate field types**: Use schema to verify:
-   - `insights[].priority` is one of ["High", "Medium", "Low"]
-   - `insights[].source_url` is valid URI format
-   - `trends[].trajectory` is one of ["rising", "stable", "declining"]
-
-4. **Handle validation failures**:
-   - If critical field missing: retry agent invocation with specific feedback
-   - If non-critical field wrong type: log warning, continue with default
-   - Max 2 validation retries before proceeding with partial data
-
-### Validation Error Response
-
-If validation fails after retries, create partial output:
-```markdown
-> ⚠️ **DATA QUALITY WARNING**
-> Agent output had validation issues: {list specific issues}
-> Some sections may be incomplete or missing.
-```
-
-## Partial Results Handling
-
-If any operation fails during execution, follow this partial results pattern:
-
-### Scenario: Intelligence Agent Returns Partial Data
-
-If agent returns some valid data but has issues:
-1. Extract and use valid portions
-2. Add banner to output indicating partial results
-3. Log what failed in agent log file
-
-Example banner:
-```markdown
-> ⚠️ **PARTIAL RESULTS**
-> - Sources scanned: 8/12 (4 failed)
-> - Trend analysis: Incomplete (insufficient source coverage)
-> - See Source Log for failed sources
-```
-
-### Scenario: Notion Sync Fails
-
-If sync-agent fails after retries:
-1. Continue with local file save (already completed)
-2. Add note to output:
-```markdown
-**Notion Sync**: ❌ Failed after 3 retries. Saved locally only.
-```
-3. Log sync failure to `system/logs/{date}-sync-errors.json`
-
-### Scenario: More than 50% Sources Failed
-
-Add prominent warning:
-```markdown
-> ⚠️ **LIMITED INTELLIGENCE**
-> {failed_count}/{total_count} sources failed to respond.
-> Results may be incomplete. Consider running again later.
->
-> **Failed Sources**:
-> - {source_name}: {error_reason}
-```
-
-### Error Log Format
-
-Write errors to `system/logs/{YYYY-MM-DD}-market-intelligence-errors.json`:
-```json
-{
-  "command": "/market-intelligence",
-  "timestamp": "ISO date",
-  "errors": [
-    {
-      "phase": "agent_invocation" | "validation" | "notion_sync",
-      "attempt": 1,
-      "error": "error message",
-      "resolved": true | false
-    }
-  ],
-  "partial_results": true | false,
-  "recovery_actions": ["description of what was recovered"]
-}
-```
-
-## Example Output Locations
-
-- Standard: `2-research/market-briefs/2026-01-08-1430-market-brief.md`
-- With `--deep`: `2-research/market-briefs/2026-01-08-1430-market-brief-deep-ai-agents.md`
-
-## Performance Target
-
-- Standard depth: < 3 minutes
-- Quick depth: < 1 minute
-- Deep depth: < 5 minutes

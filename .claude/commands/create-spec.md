@@ -22,13 +22,7 @@ Create a structured feature specification from the current planning conversation
 
 ### 1. Validate Feature Name
 
-```
-If no feature name provided:
-  - Ask user for the feature name
-  - Suggest kebab-case format
-
-Convert to kebab-case if needed (spaces → hyphens, lowercase)
-```
+If no name provided: ask user, suggest kebab-case. Convert if needed (spaces → hyphens, lowercase).
 
 ### 2. Create Spec Folder
 
@@ -40,153 +34,54 @@ Create directory: system/specs/{feature-name}/
 
 Analyze the current conversation to extract:
 
-**For requirements.md:**
-- What the feature does (functional description)
-- Why it's needed (motivation/problem it solves)
-- Acceptance criteria (how to know it's done)
-- Dependencies on other features or systems
-
-**For implementation-plan.md:**
-- Logical phases of implementation
-- Specific tasks with checkboxes
-- Technical details discussed (CLI commands, schemas, code patterns)
-- File paths to create or modify
-- Dependencies between tasks
-
-**For action-required.md:**
-- Manual steps requiring human action
-- Account creation, API keys, environment variables
-- Third-party service configuration
-- Any setup that cannot be automated
+**For requirements.md:** Functional description, motivation, acceptance criteria, dependencies
+**For implementation-plan.md:** Phases, tasks with checkboxes, technical details, file paths, dependencies
+**For action-required.md:** Manual human steps (accounts, API keys, env vars, service config)
 
 ### 4. Create requirements.md
 
-Write `system/specs/{feature-name}/requirements.md`:
-
 ```markdown
 # Requirements: {Feature Name}
-
 ## Overview
-
-{1-2 sentence summary of what this feature does}
-
+{1-2 sentence summary}
 ## Motivation
-
-{Why this feature is needed, what problem it solves}
-
+{Why needed, what problem it solves}
 ## Functional Requirements
-
-- {Requirement 1}
-- {Requirement 2}
-- {Requirement 3}
-
+- {Requirements list}
 ## Acceptance Criteria
-
-- [ ] {Criterion 1 - specific, testable}
-- [ ] {Criterion 2}
-- [ ] {Criterion 3}
-
+- [ ] {Testable criteria}
 ## Dependencies
-
-- {Dependency 1, if any}
-- {Dependency 2, if any}
-
+- {Dependencies if any}
 ## Out of Scope
-
-- {What this feature explicitly does NOT include}
+- {Explicit exclusions}
 ```
 
 ### 5. Create implementation-plan.md
 
-Write `system/specs/{feature-name}/implementation-plan.md`:
-
 ```markdown
 # Implementation Plan: {Feature Name}
-
 ## Overview
-
-{Brief summary of what will be built and the approach}
-
+{Approach summary}
 ## Phase 1: {Phase Name}
-
-{Brief description of this phase's goal}
-
+{Phase goal}
 ### Tasks
-
-- [ ] Task 1 description
-- [ ] Task 2 description (depends on Task 1)
-- [ ] Task 3 description
-  - [ ] Sub-task 3a
-  - [ ] Sub-task 3b
-
+- [ ] Task description
+  - [ ] Sub-tasks if needed
 ### Technical Details
-
-{Include CLI commands, code snippets, schemas, file paths, and other implementation specifics discussed during planning that are relevant to this phase's tasks.}
-
+{CLI commands, code snippets, schemas, file paths}
 ## Phase 2: {Phase Name}
-
-{Brief description}
-
-### Tasks
-
-- [ ] Task 4 description (depends on Phase 1)
-- [ ] Task 5 description
-
-### Technical Details
-
-{Technical details for Phase 2 tasks.}
-
+...
 ---
-
 ## Files to Create/Modify
-
 | File | Action | Purpose |
-|------|--------|---------|
-| `path/to/file.md` | Create | Description |
-| `path/to/existing.md` | Modify | What changes |
 ```
 
 ### 6. Create action-required.md
 
-Write `system/specs/{feature-name}/action-required.md`:
-
-**If manual steps exist:**
-
-```markdown
-# Action Required: {Feature Name}
-
-Manual steps that must be completed by a human. These cannot be automated.
-
-## Before Implementation
-
-- [ ] **{Action}** - {Brief reason why this is needed}
-
-## During Implementation
-
-- [ ] **{Action}** - {Brief reason}
-
-## After Implementation
-
-- [ ] **{Action}** - {Brief reason}
-
----
-
-> **Note:** These tasks are also listed in context within `implementation-plan.md`
-```
-
-**If no manual steps exist:**
-
-```markdown
-# Action Required: {Feature Name}
-
-No manual steps required for this feature.
-
-All tasks can be implemented automatically.
-```
+If manual steps exist: list under Before/During/After Implementation sections.
+If none: "No manual steps required."
 
 ### 7. Confirm Creation
-
-Display summary to user:
 
 ```
 Feature specification created at `system/specs/{feature-name}/`
@@ -196,39 +91,18 @@ Files created:
 - implementation-plan.md - Phased tasks with technical details
 - action-required.md - Manual steps (if any)
 
-**Next steps:**
-1. Review the generated specs for accuracy
-2. Refine any unclear requirements or tasks
-3. Begin implementation following the task checklist
+**Next steps:** Review, refine, implement
 ```
 
 ## Task Guidelines
 
-When extracting tasks from the conversation:
-
-- **Keep tasks atomic** - Each should be implementable in a single session
-- **Be specific** - "Add validation to form" not "Handle forms"
-- **Note dependencies** - Mark when tasks must be done in order
-- **Capture technical details** - CLI commands, file paths, schemas
-- **Don't lose context** - If specifics were discussed, include them
-
-## Common Manual Tasks
-
-Look for these in the conversation:
-
-- Account creation (services, platforms)
-- API key generation
-- Environment variable setup
-- OAuth app configuration
-- DNS/domain setup
-- Third-party service registration
-- Billing or subscription setup
-- Permission grants (Notion, GitHub, etc.)
+- Keep tasks atomic (single session)
+- Be specific ("Add validation to form" not "Handle forms")
+- Note dependencies between tasks
+- Capture technical details (CLI commands, file paths, schemas)
 
 ## Notes
 
 - Specs are gitignored (personal to each user)
-- No Notion sync for specs (local workflow only)
-- Exclude testing tasks unless explicitly requested
+- No Notion sync (local workflow only)
 - Phase-based organization helps track progress
-- Technical details section prevents losing implementation specifics
