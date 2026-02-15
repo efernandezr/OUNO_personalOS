@@ -98,11 +98,47 @@ content_pillars:
       - "Theme 1"
       - "Theme 2"
 
-# Calibration notes
+# Calibration configuration
+# Updated by /voice-calibrate command
 calibration:
+  # Sample requirements
   samples_required: 10
   sample_types:
     - "linkedin-posts"
     - "newsletter-samples"
   last_samples: []
-  improvement_notes: "Add actual content samples to 1-capture/voice-samples/ and run /voice-calibrate"
+
+  # Voice blend settings (populated after calibration with inspiration samples)
+  # Your core voice always dominates (70-100%)
+  # Inspiration adds subtle influence from admired writers (0-30%)
+  core_voice_weight: 1.0          # Default: 100% core voice
+  inspiration_blend: 0.0          # Default: 0% inspiration
+
+  # Inspiration sources (populated after calibration)
+  # Add samples from writers you admire to 1-capture/voice-samples/inspiration/
+  # Then run /voice-calibrate to blend their techniques into your voice
+  #
+  # Example after calibration:
+  # inspiration_sources:
+  #   - author: "Adam Grant"
+  #     traits_adopted:
+  #       - "counterintuitive-claim"
+  #       - "research-backed"
+  #   - author: "Sahil Bloom"
+  #     traits_adopted:
+  #       - "progressive-reveal"
+  inspiration_sources: []
+
+  # Human-readable blend summary (populated after calibration)
+  blend_summary: "Pure core voice - no inspiration samples configured"
+
+  # Notes for improvement
+  improvement_notes: |
+    Add actual content samples to 1-capture/voice-samples/ and run /voice-calibrate.
+
+    To enable inspiration blending:
+    1. Add samples from admired writers to 1-capture/voice-samples/inspiration/{platform}/{author}/
+    2. Include required frontmatter: author, source_url, date, style_traits, why_admired
+    3. Run /voice-calibrate to create a blended voice profile
+
+    See 1-capture/voice-samples/inspiration/README.md for detailed instructions.
