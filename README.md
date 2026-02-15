@@ -639,10 +639,10 @@ PersonalOS uses **Task tool delegation** to specialized agents for complex tasks
 |-------|---------|-------|
 | `intelligence-agent` | Web scraping, trend synthesis, source scanning | Sonnet |
 | `pattern-agent` | Theme extraction, note analysis, content opportunities | Sonnet |
-| `content-agent` | Voice-matched content generation for all platforms | Sonnet |
+| `content-analysis-agent` | Source analysis, story diversity, platform angle selection | Sonnet |
+| `content-agent` | Voice-matched content generation for all platforms | Opus |
 | `voice-calibration-agent` | Analyze samples, extract voice patterns | Sonnet |
-| `sync-agent` | Notion read/write operations | Haiku |
-| `sync-brain-dumps-agent` | Pull brain dumps from Notion | Haiku |
+| `sync-agent` | Notion read/write operations, brain dump sync | Haiku |
 
 Agent definitions are in `.claude/agents/` and can be customized to improve output quality.
 
