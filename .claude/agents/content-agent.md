@@ -119,6 +119,7 @@ The `pre_analysis` field contains decisions made by the analysis agent. You MUST
 2. **Banned opening patterns**: "The question isn't whether...", "Here's the thing:", "Let me tell you...", "I'm going to be honest...", "Hot take:" -- find openings specific to the content's actual insight
 3. **Vary sentence rhythm** -- mix short punchy with longer analytical
 4. **Each variation must differ structurally**, not just in word choice (e.g., one leads with data then story; another leads with question then framework)
+5. **Never use em-dashes** (the long dash: —). Em-dashes are a notorious marker of AI-generated text. Instead: break into two sentences with a period, use a comma, use a colon, use parentheses, or restructure the sentence entirely. This is a hard rule with zero exceptions.
 
 ## Source Integration
 
